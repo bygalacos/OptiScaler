@@ -307,7 +307,7 @@ static const QuirkEntry quirkTable[] = {
     // Medium, NINJA GAIDEN 4 (+ WinGDK), God of War (2018), Europa Universalis V, Need for Speed Unbound, Nioh 2 – The
     // Complete Edition, Control Ultimate Edition, Deathloop, Where Winds Meet, FINAL FANTASY VII REMAKE INTERGRADE (for
     // Luma mod), Assassin’s Creed Shadows, Farming Simulator 2025, Nioh 3, FATAL FRAME II: Crimson Butterfly REMAKE,
-    // OUTRIDERS, Assetto Corsa EVO, MOUSE: P.I. For Hire
+    // OUTRIDERS, Assetto Corsa EVO, MOUSE: P.I. For Hire, Yet Another Zombie Survivors, Voodoo Fishin'
     QUIRK_ENTRY("witcher3.exe", GameQuirk::DisableDxgiSpoofing),
     QUIRK_ENTRY("alanwake2.exe", GameQuirk::DisableDxgiSpoofing),
     QUIRK_ENTRY("crysis3remastered.exe", GameQuirk::DisableDxgiSpoofing),
@@ -347,13 +347,16 @@ static const QuirkEntry quirkTable[] = {
     QUIRK_ENTRY_UE(outriders, GameQuirk::DisableDxgiSpoofing),
     QUIRK_ENTRY("assettocorsaevo.exe", GameQuirk::DisableDxgiSpoofing),
     QUIRK_ENTRY("mouse.exe", GameQuirk::DisableDxgiSpoofing),
+    QUIRK_ENTRY("yet another zombie survivors.exe", GameQuirk::DisableDxgiSpoofing),
+    QUIRK_ENTRY("voodoo fishin'.exe", GameQuirk::DisableDxgiSpoofing),
 
     // FSR2/3 only, no spoof needed
     //
     // Tiny Tina's Wonderlands, Dead Island 2, The Outer Worlds: Spacer's Choice Edition, Scorn, Thymesia, Company of
     // Heroes 3, Caravan Sandwitch, Asterigos: Curse of the Stars, Saints Row (2022)
     QUIRK_ENTRY("wonderlands.exe", GameQuirk::DisableReactiveMasks, GameQuirk::DisableDxgiSpoofing),
-    QUIRK_ENTRY_UE(deadisland, GameQuirk::DisableReactiveMasks, GameQuirk::DisableDxgiSpoofing),
+    QUIRK_ENTRY_UE(deadisland, GameQuirk::DisableReactiveMasks, GameQuirk::DisableDxgiSpoofing,
+                   GameQuirk::ForceAutoExposure),
     QUIRK_ENTRY_UE(indiana, GameQuirk::DisableReactiveMasks, GameQuirk::DisableDxgiSpoofing,
                    GameQuirk::ForceAutoExposure),
     QUIRK_ENTRY_UE(scorn, GameQuirk::DisableDxgiSpoofing),

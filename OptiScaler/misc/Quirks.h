@@ -93,9 +93,11 @@ static const QuirkEntry quirkTable[] = {
     QUIRK_ENTRY("playrdr2.exe", GameQuirk::DisableFSR3Inputs, GameQuirk::DisableDxgiSpoofing),
 
     // Red Dead Redemption
-    QUIRK_ENTRY("rdr.exe", GameQuirk::SkipFsr3Method, GameQuirk::NoFSRFGFirstSwapchain, GameQuirk::DisableDxgiSpoofing),
+    // Preserving the FG swapchain causes crashes with DLSSG via SL
+    QUIRK_ENTRY("rdr.exe", GameQuirk::SkipFsr3Method, GameQuirk::NoFSRFGFirstSwapchain, GameQuirk::DisableDxgiSpoofing,
+                GameQuirk::DoNotPreserveFGSwapChain),
     QUIRK_ENTRY("playrdr.exe", GameQuirk::SkipFsr3Method, GameQuirk::NoFSRFGFirstSwapchain,
-                GameQuirk::DisableDxgiSpoofing),
+                GameQuirk::DisableDxgiSpoofing, GameQuirk::DoNotPreserveFGSwapChain),
 
     // Visions of Mana
     // Use FSR2 Pattern Matching to fix broken FSR2 detection

@@ -276,6 +276,11 @@ VkResult VulkanSpoofing::hkvkCreateInstance(VkInstanceCreateInfo* pCreateInfo, c
                 vulkanModule, "vkEnumerateInstanceExtensionProperties");
         }
 
+        if (o_vkEnumerateInstanceExtensionProperties == nullptr)
+        {
+            enumarate = vkEnumerateInstanceExtensionProperties;
+        }
+
         LOG_INFO("vkInstanceExtensions is empty, enumerating instance extensions");
         vkEnumerateInstanceExtensionPropertiesListed = true;
         vkEnumerateInstanceExtensionPropertiesCount = 0;
@@ -408,6 +413,11 @@ VkResult VulkanSpoofing::hkvkCreateDevice(VkPhysicalDevice physicalDevice, VkDev
         {
             enumarate = (PFN_vkEnumerateDeviceExtensionProperties) KernelBaseProxy::GetProcAddress_()(
                 vulkanModule, "vkEnumerateDeviceExtensionProperties");
+        }
+
+        if (o_vkEnumerateDeviceExtensionProperties == nullptr)
+        {
+            enumarate = vkEnumerateDeviceExtensionProperties;
         }
 
         vkEnumerateDeviceExtensionPropertiesListed = true;

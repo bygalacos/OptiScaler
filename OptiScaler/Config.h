@@ -303,6 +303,10 @@ class Config
     CustomOptional<bool> DisableSplash { false };
     CustomOptional<std::wstring, NoDefault> TTFFontPath;
     CustomOptional<int> FGShortcutKey { VK_END };
+    CustomOptional<bool> LightTheme { false };
+    CustomOptional<float> MenuAccentColorR { 0.11f };
+    CustomOptional<float> MenuAccentColorG { 0.78f };
+    CustomOptional<float> MenuAccentColorB { 0.72f };
 
     // Hooks
     CustomOptional<bool> HookOriginalNvngxOnly { false };

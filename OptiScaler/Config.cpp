@@ -423,6 +423,11 @@ bool Config::Reload(std::filesystem::path iniPath)
             TTFFontPath.set_from_config(readWString("Menu", "TTFFontPath"));
 
             FGShortcutKey.set_from_config(readInt("Menu", "FGShortcutKey"));
+
+            LightTheme.set_from_config(readBool("Menu", "LightTheme"));
+            MenuAccentColorR.set_from_config(readFloat("Menu", "AccentColorR"));
+            MenuAccentColorG.set_from_config(readFloat("Menu", "AccentColorG"));
+            MenuAccentColorB.set_from_config(readFloat("Menu", "AccentColorB"));
         }
 
         // Hooks
@@ -1085,6 +1090,14 @@ bool Config::SaveIni()
         ini.SetValue("Menu", "FpsScale", GetFloatValue(Instance()->FpsScale.value_for_config()).c_str());
         ini.SetValue("Menu", "TTFFontPath",
                      wstring_to_string(Instance()->TTFFontPath.value_for_config_or(L"auto")).c_str());
+
+        ini.SetValue("Menu", "LightTheme", GetBoolValue(Instance()->LightTheme.value_for_config()).c_str());
+        ini.SetValue("Menu", "MenuAccentColorR",
+                     GetFloatValue(Instance()->MenuAccentColorR.value_for_config()).c_str());
+        ini.SetValue("Menu", "MenuAccentColorG",
+                     GetFloatValue(Instance()->MenuAccentColorG.value_for_config()).c_str());
+        ini.SetValue("Menu", "MenuAccentColorB",
+                     GetFloatValue(Instance()->MenuAccentColorB.value_for_config()).c_str());
     }
 
     // Hooks

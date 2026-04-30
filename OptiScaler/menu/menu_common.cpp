@@ -2553,9 +2553,9 @@ bool MenuCommon::RenderMenu()
                 ImGui::Spacing();
 
                 if (config->UseHQFont.value_or_default())
-                    ImGui::PushFontSize(std::round(fontSize * menuResScale * 3.0f));
+                    ImGui::PushFontSize(std::round(fontSize * menuResScale * 2.5f));
                 else
-                    ImGui::SetWindowFontScale(menuResScale * 3.0f);
+                    ImGui::SetWindowFontScale(menuResScale * 2.5f);
 
                 if (state.nvngxExists || state.nvngxReplacement.has_value() ||
                     (state.libxessExists || XeSSProxy::Module() != nullptr))
@@ -2577,9 +2577,8 @@ bool MenuCommon::RenderMenu()
 
                     std::string joinedUpscalers(joined.begin(), joined.end());
 
-                    ImGui::Text("Please select %s as upscaler\nfrom game options and load into a save (if not "
-                                "showing)\nto enable "
-                                "upscaler settings.\n",
+                    ImGui::Text("Please select %s as upscaler from game\noptions and load a save game "
+                                "to enable Opti settings.\nUpscalers don't always work in menus.",
                                 joinedUpscalers.c_str());
 
                     if (config->UseHQFont.value_or_default())
@@ -5580,7 +5579,7 @@ bool MenuCommon::RenderMenu()
 
                 // THEME -----------------------------
                 ImGui::Spacing();
-                if (auto ch = ScopedCollapsingHeader("Menu Theme and Color"); ch.IsHeaderOpen())
+                if (auto ch = ScopedCollapsingHeader("Menu Theme and Colour"); ch.IsHeaderOpen())
                 {
                     ScopedIndent indent {};
                     ImGui::Spacing();
@@ -5814,7 +5813,7 @@ bool MenuCommon::RenderMenu()
                                              config->MenuAccentColorG.value_or_default(),
                                              config->MenuAccentColorB.value_or_default() };
 
-                    if (ImGui::ColorEdit3("Custom Accent Color", accentColor))
+                    if (ImGui::ColorEdit3("Custom Accent Colour", accentColor))
                     {
                         config->MenuAccentColorR = accentColor[0];
                         config->MenuAccentColorG = accentColor[1];
@@ -5824,7 +5823,7 @@ bool MenuCommon::RenderMenu()
 
                     ImGui::Spacing();
 
-                    if (ImGui::Button("Reset Accent Color"))
+                    if (ImGui::Button("Reset Accent Colour"))
                     {
                         config->MenuAccentColorR.reset();
                         config->MenuAccentColorG.reset();

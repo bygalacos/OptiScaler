@@ -4,6 +4,7 @@
 
 #include "precompile/RCAS_Shader_Dx11.h"
 #include "precompile/da_sharpen_Shader_Dx11.h"
+#include "precompile/lc_da_sharpen_Shader_Dx11.h"
 
 #include <Config.h>
 
@@ -378,6 +379,57 @@ bool RCAS_Dx11::DispatchDepthAdaptive(ID3D11Device* InDevice, ID3D11DeviceContex
     return true;
 }
 
+bool RCAS_Dx11::DispatchLCDepthAdaptive(ID3D11Device* InDevice, ID3D11DeviceContext* InContext,
+                                        ID3D11Texture2D* InResource, ID3D11Texture2D* InMotionVectors,
+                                        ID3D11Texture2D* InDepth, RcasConstants InConstants,
+                                        ID3D11Texture2D* OutResource)
+{
+    (void) InDevice;
+
+    if (InDepth == nullptr || _computeShaderLCDA == nullptr)
+        return false;
+
+    if (!InitializeViewsDA(InResource, InMotionVectors, InDepth, OutResource))
+        return false;
+
+    InternalConstantsDA constants {};
+    FillMotionConstants(constants, InConstants);
+
+    D3D11_MAPPED_SUBRESOURCE mappedResource;
+    auto hr = InContext->Map(_constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
+    if (FAILED(hr))
+    {
+        LOG_ERROR("[{0}] Map error {1:x}", _name, hr);
+
+        if (hr == DXGI_ERROR_DEVICE_REMOVED && _device != nullptr)
+            Util::GetDeviceRemovedReason(_device);
+
+        return false;
+    }
+
+    memcpy(mappedResource.pData, &constants, sizeof(constants));
+    InContext->Unmap(_constantBuffer, 0);
+
+    InContext->CSSetShader(_computeShaderLCDA, nullptr, 0);
+    InContext->CSSetConstantBuffers(0, 1, &_constantBuffer);
+
+    ID3D11ShaderResourceView* srvs[3] = { _srvInput, _srvMotionVectors, _srvDepth };
+    InContext->CSSetShaderResources(0, 3, srvs);
+    InContext->CSSetUnorderedAccessViews(0, 1, &_uavOutput, nullptr);
+
+    UINT dispatchWidth = (constants.DisplayWidth + InNumThreadsX - 1) / InNumThreadsX;
+    UINT dispatchHeight = (constants.DisplayHeight + InNumThreadsY - 1) / InNumThreadsY;
+
+    InContext->Dispatch(dispatchWidth, dispatchHeight, 1);
+
+    ID3D11UnorderedAccessView* nullUAV = nullptr;
+    InContext->CSSetUnorderedAccessViews(0, 1, &nullUAV, nullptr);
+    ID3D11ShaderResourceView* nullSRV[3] = { nullptr, nullptr, nullptr };
+    InContext->CSSetShaderResources(0, 3, nullSRV);
+
+    return true;
+}
+
 bool RCAS_Dx11::Dispatch(ID3D11Device* InDevice, ID3D11DeviceContext* InContext, ID3D11Texture2D* InResource,
                          ID3D11Texture2D* InMotionVectors, RcasConstants InConstants, ID3D11Texture2D* OutResource,
                          ID3D11Texture2D* InDepth)
@@ -393,10 +445,15 @@ bool RCAS_Dx11::Dispatch(ID3D11Device* InDevice, ID3D11DeviceContext* InContext,
     _device = InDevice;
 
     const bool useDepthAdaptive = Config::Instance()->UseDepthAwareSharpen.value_or_default() && InDepth != nullptr;
+    const bool useLCDepthAdaptive = Config::Instance()->UseLCDepthAwareSharpen.value_or_default() && InDepth != nullptr;
 
     if (useDepthAdaptive)
         return DispatchDepthAdaptive(InDevice, InContext, InResource, InMotionVectors, InDepth, InConstants,
                                      OutResource);
+
+    if (useLCDepthAdaptive)
+        return DispatchLCDepthAdaptive(InDevice, InContext, InResource, InMotionVectors, InDepth, InConstants,
+                                       OutResource);
 
     return DispatchRCAS(InDevice, InContext, InResource, InMotionVectors, InConstants, OutResource);
 }
@@ -425,7 +482,15 @@ RCAS_Dx11::RCAS_Dx11(std::string InName, ID3D11Device* InDevice) : _name(InName)
                                           nullptr, &_computeShaderDA);
         if (FAILED(hr))
         {
-            LOG_ERROR("[{0}] CreateComputeShader error for depth adaptive shader: {1:X}", _name, hr);
+            LOG_ERROR("[{0}] CreateComputeShader error for depth aware shader: {1:X}", _name, hr);
+            return;
+        }
+
+        hr = _device->CreateComputeShader(reinterpret_cast<const void*>(lc_da_sharpen_cso), sizeof(lc_da_sharpen_cso),
+                                          nullptr, &_computeShaderLCDA);
+        if (FAILED(hr))
+        {
+            LOG_ERROR("[{0}] CreateComputeShader error for LC depth aware shader: {1:X}", _name, hr);
             return;
         }
     }
@@ -470,9 +535,23 @@ RCAS_Dx11::RCAS_Dx11(std::string InName, ID3D11Device* InDevice) : _name(InName)
         }
         else
         {
-            LOG_ERROR("[{0}] RCAS_CompileShader error for depth adaptive shader!", _name);
+            LOG_ERROR("[{0}] RCAS_CompileShader error for depth aware shader!", _name);
             hr = _device->CreateComputeShader(reinterpret_cast<const void*>(da_sharpen_cso), sizeof(da_sharpen_cso),
                                               nullptr, &_computeShaderDA);
+        }
+
+        shaderBlob = RCAS_CompileShader(lcDASharpenCode.c_str(), "CSMain", "cs_5_0");
+
+        if (shaderBlob != nullptr)
+        {
+            hr = _device->CreateComputeShader(shaderBlob->GetBufferPointer(), shaderBlob->GetBufferSize(), nullptr,
+                                              &_computeShaderLCDA);
+        }
+        else
+        {
+            LOG_ERROR("[{0}] RCAS_CompileShader error for LC depth aware shader!", _name);
+            hr = _device->CreateComputeShader(reinterpret_cast<const void*>(lc_da_sharpen_cso),
+                                              sizeof(lc_da_sharpen_cso), nullptr, &_computeShaderLCDA);
         }
 
         if (shaderBlob != nullptr)

@@ -457,6 +457,7 @@ bool Config::Reload(std::filesystem::path iniPath)
                 Contrast.set_from_config(std::clamp(setting.value(), -2.0f, 2.0f));
 
             UseDepthAwareSharpen.set_from_config(readBool("CAS", "UseDepthAwareSharpen"));
+            UseLCDepthAwareSharpen.set_from_config(readBool("CAS", "UseLCDepthAwareSharpen"));
             DADepthIsLinear.set_from_config(readBool("CAS", "DADepthIsLinear"));
             DADepthScale.set_from_config(readFloat("CAS", "DADepthScale"));
             DADepthBias.set_from_config(readFloat("CAS", "DADepthBias"));
@@ -1047,6 +1048,8 @@ bool Config::SaveIni()
 
         ini.SetValue("CAS", "UseDepthAwareSharpen",
                      GetBoolValue(Instance()->UseDepthAwareSharpen.value_for_config()).c_str());
+        ini.SetValue("CAS", "UseLCDepthAwareSharpen",
+                     GetBoolValue(Instance()->UseLCDepthAwareSharpen.value_for_config()).c_str());
         ini.SetValue("CAS", "DADepthIsLinear", GetBoolValue(Instance()->DADepthIsLinear.value_for_config()).c_str());
         ini.SetValue("CAS", "DADepthScale", GetFloatValue(Instance()->DADepthScale.value_for_config()).c_str());
         ini.SetValue("CAS", "DADepthBias", GetFloatValue(Instance()->DADepthBias.value_for_config()).c_str());

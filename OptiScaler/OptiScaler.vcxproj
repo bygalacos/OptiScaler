@@ -326,6 +326,9 @@ copy NUL "$(SolutionDir)x64\Release\a\!! EXTRACT ALL FILES TO GAME FOLDER !!" /Y
     <ClInclude Include="shaders\rcas\precompile\da_sharpen_Shader.h" />
     <ClInclude Include="shaders\rcas\precompile\da_sharpen_Shader_Dx11.h" />
     <ClInclude Include="shaders\rcas\precompile\da_sharpen_Shader_Vk.h" />
+    <ClInclude Include="shaders\rcas\precompile\lc_da_sharpen_Shader.h" />
+    <ClInclude Include="shaders\rcas\precompile\lc_da_sharpen_Shader_Dx11.h" />
+    <ClInclude Include="shaders\rcas\precompile\lc_da_sharpen_Shader_Vk.h" />
     <ClInclude Include="spoofing\User32_Spoofing.h" />
     <ClInclude Include="hooks\VulkanwDx12_Hooks.h" />
     <ClInclude Include="inputs\FSR2_Dx11.h" />

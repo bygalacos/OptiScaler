@@ -20,18 +20,18 @@ static inline int evalCounter = 0;
 static inline bool shutdown = false;
 static inline bool _skipInit = false;
 
-class ScopedInit
+class ScopedInitDx11
 {
   private:
     bool previousState;
 
   public:
-    ScopedInit()
+    ScopedInitDx11()
     {
         previousState = _skipInit;
         _skipInit = true;
     }
-    ~ScopedInit() { _skipInit = previousState; }
+    ~ScopedInitDx11() { _skipInit = previousState; }
 };
 
 #pragma region NVSDK_NGX_D3D11_Init

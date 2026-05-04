@@ -30,18 +30,19 @@ static std::wstring appDataPath = L".";
 static bool shutdown = false;
 static inline bool _skipInit = false;
 
-class ScopedInit
+class ScopedInitDx12
 {
   private:
     bool previousState;
 
   public:
-    ScopedInit()
+    ScopedInitDx12()
     {
         previousState = _skipInit;
         _skipInit = true;
     }
-    ~ScopedInit() { _skipInit = previousState; }
+
+    ~ScopedInitDx12() { _skipInit = previousState; }
 };
 
 #pragma region DLSS Init Calls

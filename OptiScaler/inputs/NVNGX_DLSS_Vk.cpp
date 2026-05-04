@@ -26,18 +26,18 @@ static inline int evalCounter = 0;
 static inline bool shutdown = false;
 static inline bool _skipInit = false;
 
-class ScopedInit
+class ScopedInitVk
 {
   private:
     bool previousState;
 
   public:
-    ScopedInit()
+    ScopedInitVk()
     {
         previousState = _skipInit;
         _skipInit = true;
     }
-    ~ScopedInit() { _skipInit = previousState; }
+    ~ScopedInitVk() { _skipInit = previousState; }
 };
 
 NVSDK_NGX_API NVSDK_NGX_Result NVSDK_NGX_VULKAN_Init_Ext2(

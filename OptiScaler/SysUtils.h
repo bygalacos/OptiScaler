@@ -51,6 +51,9 @@
 // Enable D3D11 Debug Layers
 // #define ENABLE_DEBUG_LAYER_DX11
 
+// Enable DXGI Debug Layers
+// #define DXGI_DEBUG_ENABLED
+
 #ifdef ENABLE_DEBUG_LAYER_DX12
 // Enable GPUValidation
 // #define ENABLE_GPU_VALIDATION

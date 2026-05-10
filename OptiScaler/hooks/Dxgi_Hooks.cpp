@@ -171,7 +171,7 @@ inline static HRESULT hkCreateDXGIFactory(REFIID riid, IDXGIFactory** ppFactory)
     }
 
     State::DisableChecks(97, "dxgi");
-#ifndef ENABLE_DEBUG_LAYER_DX12
+#ifndef DXGI_DEBUG_ENABLED
     auto result = o_CreateDXGIFactory(riid, ppFactory);
 #else
     auto result = o_CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, riid, (IDXGIFactory2**) ppFactory);
@@ -223,7 +223,7 @@ inline static HRESULT hkCreateDXGIFactory1(REFIID riid, IDXGIFactory1** ppFactor
     }
 
     State::DisableChecks(98, "dxgi");
-#ifndef ENABLE_DEBUG_LAYER_DX12
+#ifndef DXGI_DEBUG_ENABLED
     auto result = o_CreateDXGIFactory1(riid, ppFactory);
 #else
     auto result = o_CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, riid, (IDXGIFactory2**) ppFactory);
@@ -277,7 +277,7 @@ inline static HRESULT hkCreateDXGIFactory2(UINT Flags, REFIID riid, IDXGIFactory
     }
 
     State::DisableChecks(99, "dxgi");
-#ifndef ENABLE_DEBUG_LAYER_DX12
+#ifndef DXGI_DEBUG_ENABLED
     auto result = o_CreateDXGIFactory2(Flags, riid, ppFactory);
 #else
     auto result = o_CreateDXGIFactory2(Flags | DXGI_CREATE_FACTORY_DEBUG, riid, ppFactory);

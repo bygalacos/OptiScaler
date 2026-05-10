@@ -17,6 +17,17 @@
 #include <d3d11.h>
 #include <d3d12.h>
 
+#ifdef DXGI_DEBUG_ENABLED
+#include <magic_enum.hpp>
+#include <dxgidebug.h>
+
+#pragma comment(lib, "dxguid.lib")
+
+#ifdef ENABLE_DEBUG_LAYER_DX12
+#include <d3d12sdklayers.h>
+#endif
+#endif
+
 #pragma intrinsic(_ReturnAddress)
 
 // Used RenderDoc's wrapped object as referance
@@ -83,6 +94,54 @@ static void WaitForGPUIdle(IUnknown* object)
         }
     }
 }
+
+#ifdef DXGI_DEBUG_ENABLED
+void ReportDXGILiveObjects()
+{
+    IDXGIDebug1* dxgiDebug = nullptr;
+
+    if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiDebug))))
+    {
+        dxgiDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
+        dxgiDebug->Release();
+    }
+}
+
+void ReadDxgiInfoQueue()
+{
+    IDXGIInfoQueue* dxgiInfoQueue = nullptr;
+    if (DXGIGetDebugInterface1(0, IID_PPV_ARGS(&dxgiInfoQueue)) == S_OK)
+    {
+        UINT64 msgCount = dxgiInfoQueue->GetNumStoredMessages(DXGI_DEBUG_ALL);
+        for (UINT64 i = 0; i < msgCount; ++i)
+        {
+            SIZE_T msgLen = 0;
+            dxgiInfoQueue->GetMessage(DXGI_DEBUG_ALL, i, nullptr, &msgLen);
+            std::vector<char> buf(msgLen);
+            auto* msg = reinterpret_cast<DXGI_INFO_QUEUE_MESSAGE*>(buf.data());
+            dxgiInfoQueue->GetMessage(DXGI_DEBUG_ALL, i, msg, &msgLen);
+
+            auto description = std::string(msg->pDescription, msg->DescriptionByteLength);
+            LOG_DEBUG("DXGI Debug Message: Category: {}, Severity: {}, ID: {}, Description: {}",
+                      magic_enum::enum_name(msg->Category), magic_enum::enum_name(msg->Severity), msg->ID, description);
+        }
+    }
+}
+
+#ifdef ENABLE_DEBUG_LAYER_DX12
+void ReportD3D12LiveObjects(ID3D12Device* device)
+{
+    ID3D12DebugDevice* debugDevice = nullptr;
+
+    if (SUCCEEDED(device->QueryInterface(IID_PPV_ARGS(&debugDevice))))
+    {
+        debugDevice->ReportLiveDeviceObjects(D3D12_RLDO_DETAIL | D3D12_RLDO_IGNORE_INTERNAL);
+        debugDevice->Release();
+    }
+}
+#endif
+#endif
+
 static HRESULT LocalPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags,
                             const DXGI_PRESENT_PARAMETERS* pPresentParameters, IUnknown* pDevice, HWND hWnd, bool isUWP)
 {
@@ -536,13 +595,13 @@ ULONG STDMETHODCALLTYPE WrappedIDXGISwapChain4::Release()
         }
         else
         {
-        // Release real swapchain, otherwise it can cause issues when re-creating swapchain with same handle
-        while (refCount > 0)
-        {
-            LOG_DEBUG("Waiting for real swapchain to be released, refCount: {}", refCount);
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
-            refCount = _real->Release();
-        }
+            // Release real swapchain, otherwise it can cause issues when re-creating swapchain with same handle
+            while (refCount > 0)
+            {
+                LOG_DEBUG("Waiting for real swapchain to be released, refCount: {}", refCount);
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                refCount = _real->Release();
+            }
         }
 
         LOG_DEBUG("Real swapchain released, refCount: {}", refCount);
@@ -771,6 +830,15 @@ HRESULT STDMETHODCALLTYPE WrappedIDXGISwapChain4::ResizeBuffers(UINT BufferCount
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+
+#ifdef DXGI_DEBUG_ENABLED
+    ReportDXGILiveObjects();
+
+#ifdef ENABLE_DEBUG_LAYER_DX12
+    ReportD3D12LiveObjects(State::Instance().currentD3D12Device);
+#endif
+#endif
+
     if (Config::Instance()->FGDontUseSwapchainBuffers.value_or_default())
     {
         ScopedSkipHeapCapture skipHeapCapture {};
@@ -783,6 +851,11 @@ HRESULT STDMETHODCALLTYPE WrappedIDXGISwapChain4::ResizeBuffers(UINT BufferCount
         _lastFlags = SwapChainFlags;
         result = _real->ResizeBuffers(BufferCount, Width, Height, NewFormat, SwapChainFlags);
     }
+
+#ifdef DXGI_DEBUG_ENABLED
+    if (result != S_OK)
+        ReadDxgiInfoQueue();
+#endif
 
     if (result == S_OK && State::Instance().currentFeature == nullptr)
     {
@@ -1051,7 +1124,7 @@ HRESULT STDMETHODCALLTYPE WrappedIDXGISwapChain4::ResizeBuffers1(UINT BufferCoun
         LOG_TRACE("Accuired ffxMutex: {}", State::Instance().currentFG->Mutex.getOwner());
     }
 
-    HRESULT result;
+    HRESULT result = E_FAIL;
     DXGI_SWAP_CHAIN_DESC desc {};
     _real->GetDesc(&desc);
 
@@ -1093,6 +1166,14 @@ HRESULT STDMETHODCALLTYPE WrappedIDXGISwapChain4::ResizeBuffers1(UINT BufferCoun
             skSC->Release();
             LOG_DEBUG(
                 "Found SK swapchain, skip releasing backbuffersand using ResizeBuffers instead of ResizeBuffers1");
+
+#ifdef DXGI_DEBUG_ENABLED
+            ReportDXGILiveObjects();
+
+#ifdef ENABLE_DEBUG_LAYER_DX12
+            ReportD3D12LiveObjects(State::Instance().currentD3D12Device);
+#endif
+#endif
 
             if (Config::Instance()->FGDontUseSwapchainBuffers.value_or_default())
             {
@@ -1141,21 +1222,35 @@ HRESULT STDMETHODCALLTYPE WrappedIDXGISwapChain4::ResizeBuffers1(UINT BufferCoun
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    if (Config::Instance()->FGDontUseSwapchainBuffers.value_or_default())
-    {
-        ScopedSkipHeapCapture skipHeapCapture {};
 
-        _lastFlags = SwapChainFlags;
-        result = _real3->ResizeBuffers1(BufferCount, Width, Height, Format, SwapChainFlags, pCreationNodeMask,
-                                        ppPresentQueue);
+#ifdef DXGI_DEBUG_ENABLED
+        ReportDXGILiveObjects();
+
+#ifdef ENABLE_DEBUG_LAYER_DX12
+        ReportD3D12LiveObjects(State::Instance().currentD3D12Device);
+#endif
+#endif
+
+        if (Config::Instance()->FGDontUseSwapchainBuffers.value_or_default())
+        {
+            ScopedSkipHeapCapture skipHeapCapture {};
+
+            _lastFlags = SwapChainFlags;
+            result = _real3->ResizeBuffers1(BufferCount, Width, Height, Format, SwapChainFlags, pCreationNodeMask,
+                                            ppPresentQueue);
+        }
+        else
+        {
+            _lastFlags = SwapChainFlags;
+            result = _real3->ResizeBuffers1(BufferCount, Width, Height, Format, SwapChainFlags, pCreationNodeMask,
+                                            ppPresentQueue);
+        }
     }
-    else
-    {
-        _lastFlags = SwapChainFlags;
-        result = _real3->ResizeBuffers1(BufferCount, Width, Height, Format, SwapChainFlags, pCreationNodeMask,
-                                        ppPresentQueue);
-    }
-    }
+
+#ifdef DXGI_DEBUG_ENABLED
+    if (result != S_OK)
+        ReadDxgiInfoQueue();
+#endif
 
     if (result == S_OK && State::Instance().currentFeature == nullptr)
     {

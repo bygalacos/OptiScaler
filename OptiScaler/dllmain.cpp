@@ -1751,7 +1751,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
         // Main Opti DLL path
         if (!Config::Instance()->MainDllPath.has_value())
         {
-            Config::Instance()->MainDllPath.set_volatile_value(L"OptiScaler");
+            Config::Instance()->MainDllPath.set_volatile_value(L".");
         }
 
         if (std::filesystem::path mainDllPath(Config::Instance()->MainDllPath.value()); mainDllPath.is_relative())
@@ -1873,8 +1873,7 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
                 if (!State::Instance().NVNGX_DLSS_Path.has_value() && Config::Instance()->MainDllPath.has_value())
                 {
                     std::filesystem::path dllsFolder(Config::Instance()->MainDllPath.value());
-                    State::Instance().NVNGX_DLSS_Path =
-                        Util::FindFilePath(dllsFolder, "nvngx_dlss.dll");
+                    State::Instance().NVNGX_DLSS_Path = Util::FindFilePath(dllsFolder, "nvngx_dlss.dll");
                 }
 
                 if (Config::Instance()->DLSSFeaturePath.has_value())

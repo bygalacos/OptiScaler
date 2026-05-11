@@ -142,15 +142,29 @@ float SafeLoadDepthLinearFromOutputPixel(int2 pixelCoord)
     return LinearizeDepth(SafeLoadRawDepthAtCoord(depthCoord));
 }
 
-// Algebraically folded version of the original RemapLocalContrast:
-// d = 0.7 * 6.0 * (x - center) = 4.2 * (x - center)
-// amount * 1.3 * 0.7 / 6.0 = amount * 0.15166667
+// RGB local contrast remap.
+// This intentionally operates directly on RGB
 float3 RemapLocalContrast(float3 x, float3 center, float amount)
 {
-    float3 d = clamp(4.2 * (x - center), -1.0.xxx, 1.0.xxx);
-    float3 curve = amount * 0.15166667 * (sin(d * 3.14159265) + tanh(d * 4.0));
+    float3 s = 6.0.xxx;
+
+    float3 d = 0.7 * s * (x - center);
+    d = clamp(d, -1.57079633.xxx, 1.57079633.xxx);
+
+    float3 curve = amount * 0.7 * (sin(d * 3.14159265) + tanh(d * 4.0)) / s;
 
     return x + curve;
+}
+
+float3 FastRemapLocalContrast(float3 x, float3 center, float amount)
+{
+    float3 d = clamp(4.2 * (x - center), -1.57079633.xxx, 1.57079633.xxx);
+
+    // Cheap approximation instead of sin + tanh.
+    float3 d2 = d * d;
+    float3 curveShape = d * rcp(1.0.xxx + 0.65.xxx * d2);
+
+    return x + amount * 0.38 * curveShape;
 }
 
 float2 EstimateDepthGradient(float centerDepth, float depthCross[4])
@@ -167,8 +181,6 @@ float2 EstimateDepthGradient(float centerDepth, float depthCross[4])
     return clamp(float2(gx, gy), -maxGrad, maxGrad);
 }
 
-// Soft gradient-aware weight for edge detection/debug logic.
-// Keeps a floor so edge factor does not collapse too aggressively.
 float DepthWeightGradSoft(float centerDepth, float invCenterDepth, float sampleDepth, float2 gradient, int2 offset)
 {
     float predicted = centerDepth + dot(float2(offset), gradient);
@@ -181,9 +193,6 @@ float DepthWeightGradSoft(float centerDepth, float invCenterDepth, float sampleD
     return lerp(0.65, 1.0, w);
 }
 
-// Hard gradient-aware weight for actual sharpening taps.
-// This is the important one: no 0.65 floor, and gradient prediction avoids
-// treating smooth depth slopes as edges.
 float DepthWeightTapGrad(float centerDepth, float invCenterDepth, float sampleDepth, float2 gradient, int2 offset)
 {
     float predicted = centerDepth + dot(float2(offset), gradient);
@@ -275,8 +284,6 @@ float ComputeEdgeFactor(float centerLuma, float centerDepth, float invCenterDept
         depthEdge = min(depthEdge, w);
     }
 
-    // Luma confirms depth edge.
-    // Depth discontinuities without visible luma contrast only partially reduce sharpening.
     float lumaAvg = lumaSum * 0.25;
     float lumaConfirm = saturate((lumaAvg - 0.02) * 18.0);
 
@@ -320,6 +327,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
     if (adaptiveSharpness <= 0.0)
     {
         float3 outColor = c;
+        outColor = max(c, 0.0);
 
         if (Debug > 0)
             outColor = ApplyDebugTint(outColor, Sharpness, adaptiveSharpness, adaptiveSharpness, adaptiveSharpness, 1.0, Debug);
@@ -331,12 +339,9 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
         return;
     }
 
-    // Cache center depth and inverse center depth once.
     float centerDepth = SafeLoadDepthLinearFromOutputPixel(p);
     float invCenterDepth = 1.0 / max(abs(centerDepth), 1e-4);
 
-    // Cache cross taps once. These are reused by gradient estimation,
-    // edge detection, local luma range, local scale, and the Laplacian pass.
     float3 cCross[4];
     float depthCross[4];
     float lumaCross[4];
@@ -351,7 +356,6 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
         lumaCross[i] = Luma(cCross[i]);
     }
 
-    // Cache diagonal taps once. These are reused by local scale and the Laplacian pass.
     float3 cDiag[4];
     float depthDiag[4];
 
@@ -367,7 +371,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
     float2 depthGrad = EstimateDepthGradient(centerDepth, depthCross);
 
     // -------------------------------------------------------------------------
-    // Global adaptive reduction
+    // Strength controls from your version
     // -------------------------------------------------------------------------
 
     float edgeFactor = ComputeEdgeFactor(centerLuma, centerDepth, invCenterDepth, depthGrad, lumaCross, depthCross);
@@ -385,54 +389,55 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
 
     boostedSharpness *= lerp(1.0, 0.9, unstable);
 
-    float finalSharpness = clamp(boostedSharpness, 0.0, 1.5);
+    float finalSharpness = clamp(boostedSharpness, 0.0, 2.0);
 
     // -------------------------------------------------------------------------
-    // Local contrast / one-level local Laplacian core
+    // Local Laplacian core
     // -------------------------------------------------------------------------
 
-    float localScale = max(max(c.r, max(c.g, c.b)), 1e-4);
+    float3 cn = c;
 
-    [unroll]
-    for (int i = 0; i < 4; ++i)
-    {
-        localScale = max(localScale, max(cCross[i].r, max(cCross[i].g, cCross[i].b)));
-        localScale = max(localScale, max(cDiag[i].r, max(cDiag[i].g, cDiag[i].b)));
-    }
-
-    localScale = max(localScale, 0.06);
-
-    float3 cn = c / localScale;
     float4 G1 = float4(cn, 1.0) * 4.0;
     float4 L0 = float4(cn, 1.0) * 4.0;
 
     [unroll]
     for (int i = 0; i < 4; ++i)
     {
-        float3 tapN = cCross[i] / localScale;
+        float3 tap = cCross[i];
 
         float depthW = DepthWeightTapGrad(centerDepth, invCenterDepth, depthCross[i], depthGrad, kCrossOffsets[i]);
         float w = 2.0 * depthW;
 
-        G1 += float4(tapN, 1.0) * w;
-        L0 += float4(RemapLocalContrast(tapN, cn, finalSharpness), 1.0) * w;
+        G1 += float4(tap, 1.0) * w;
+        L0 += float4(FastRemapLocalContrast(tap, cn, finalSharpness), 1.0) * w;
     }
 
     [unroll]
     for (int i = 0; i < 4; ++i)
     {
-        float3 tapN = cDiag[i] / localScale;
+        float3 tap = cDiag[i];
 
         float w = DepthWeightTapGrad(centerDepth, invCenterDepth, depthDiag[i], depthGrad, kDiagOffsets[i]);
 
-        G1 += float4(tapN, 1.0) * w;
-        L0 += float4(RemapLocalContrast(tapN, cn, finalSharpness), 1.0) * w;
+        G1 += float4(tap, 1.0) * w;
+        L0 += float4(FastRemapLocalContrast(tap, cn, finalSharpness), 1.0) * w;
     }
 
     G1.rgb /= max(G1.w, 1e-5);
     L0.rgb /= max(L0.w, 1e-5);
 
-    float3 output = ((cn - L0.rgb) + G1.rgb) * localScale;
+    float3 detail = cn - L0.rgb;
+
+    // Extra residual gain for your pipeline.
+    // finalSharpness = 0.0 -> original color
+    // finalSharpness = 1.0 -> stronger 
+    // finalSharpness = 2.0 -> very strong test
+    // float detailGain = 1.0 + finalSharpness * 3.0;
+    float remapAmount = finalSharpness;
+    float detailGain = lerp(1.0, 5.0, saturate(finalSharpness * 0.5));
+
+    float3 output = G1.rgb + detail * detailGain;
+    output = max(output, 0.0);
 
     if (Debug > 0)
     {

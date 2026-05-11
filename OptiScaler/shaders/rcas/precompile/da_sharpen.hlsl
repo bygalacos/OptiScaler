@@ -377,25 +377,10 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
     // Adaptive sharpness / edge protection
     // -------------------------------------------------------------------------
 
-    float2 depthGrad = EstimateDepthGradientFromTaps(
-        centerDepth,
-        depthUp,
-        depthLeft,
-        depthRight,
-        depthDown);
+    float2 depthGrad = EstimateDepthGradientFromTaps(centerDepth, depthUp, depthLeft, depthRight, depthDown);
 
-    float edgeFactor = ComputeEdgeFactorFromTaps(
-        centerLuma,
-        centerDepth,
-        depthGrad,
-        lumaUp,
-        lumaLeft,
-        lumaRight,
-        lumaDown,
-        depthUp,
-        depthLeft,
-        depthRight,
-        depthDown);
+    float edgeFactor = ComputeEdgeFactorFromTaps(centerLuma, centerDepth, depthGrad, lumaUp, lumaLeft,
+                                                 lumaRight, lumaDown, depthUp, depthLeft, depthRight, depthDown);
 
     float edgeSharpness = adaptiveSharpness * lerp(0.2, 1.0, edgeFactor);
 
@@ -405,12 +390,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
 
     float boostedSharpness = edgeSharpness * distanceBoost;
 
-    float lumaRange = ComputeLocalLumaRangeFromTaps(
-        centerLuma,
-        lumaUp,
-        lumaLeft,
-        lumaRight,
-        lumaDown);
+    float lumaRange = ComputeLocalLumaRangeFromTaps(centerLuma, lumaUp, lumaLeft, lumaRight, lumaDown);
 
     float unstable = saturate((lumaRange - 0.12) * 4.0);
     unstable *= unstable;
@@ -452,11 +432,13 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
     float3 f = lerp(e, fRaw, wf);
     float3 h = lerp(e, hRaw, wh);
 
-    float3 en = e / localScale;
-    float3 bn = b / localScale;
-    float3 dn = d / localScale;
-    float3 fn = f / localScale;
-    float3 hn = h / localScale;
+    localScale = max(localScale, 1.0);
+
+    float3 en = max(e / localScale, 0.0);
+    float3 bn = max(b / localScale, 0.0);
+    float3 dn = max(d / localScale, 0.0);
+    float3 fn = max(f / localScale, 0.0);
+    float3 hn = max(h / localScale, 0.0);
 
     // RCAS min/max ring.
     float3 minRGB = min(min(bn, dn), min(fn, hn));
@@ -476,6 +458,7 @@ void CSMain(uint3 DTid : SV_DispatchThreadID)
     float rcpL = rcp(4.0 * lobe + 1.0);
 
     float3 output = (((bn + dn + fn + hn) * lobe + en) * rcpL) * localScale;
+    output = max(output, 0.0);
 
     if (Debug > 0)
         output = ApplyDebugTint(output, Sharpness, adaptiveSharpness, edgeSharpness, finalSharpness, distanceBoost, Debug);

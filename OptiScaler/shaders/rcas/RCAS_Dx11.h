@@ -100,8 +100,8 @@ class RCAS_Dx11
                                ID3D11Texture2D* InMotionVectors, ID3D11Texture2D* InDepth, RcasConstants InConstants,
                                ID3D11Texture2D* OutResource);
     bool DispatchDASDepthAdaptive(ID3D11Device* InDevice, ID3D11DeviceContext* InContext, ID3D11Texture2D* InResource,
-                                 ID3D11Texture2D* InMotionVectors, ID3D11Texture2D* InDepth, RcasConstants InConstants,
-                                 ID3D11Texture2D* OutResource);
+                                  ID3D11Texture2D* InMotionVectors, ID3D11Texture2D* InDepth, RcasConstants InConstants,
+                                  ID3D11Texture2D* OutResource);
 
   public:
     bool CreateBufferResource(ID3D11Device* InDevice, ID3D11Resource* InSource);

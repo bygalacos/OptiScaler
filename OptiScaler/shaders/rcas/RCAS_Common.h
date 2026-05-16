@@ -717,7 +717,7 @@ float3 ApplyDebugTint(float3 color, float baseSharpness, float adaptiveSharpness
     return color;
 }
 )"
-                                     R"(
+                                      R"(
 float ComputeEdgeFactorFromTaps(float centerLuma, float centerDepth, float2 depthGrad, float lumaUp,
                                 float lumaLeft, float lumaRight, float lumaDown, float depthUp,
                                 float depthLeft, float depthRight, float depthDown)
@@ -899,7 +899,7 @@ float3 ApplyDirectionalSharpen(float3 centerColor, float3 upColor, float3 leftCo
     return max(outNorm * localScale, 0.0);
 }
 )"
-                                     R"(
+                                      R"(
 // -----------------------------------------------------------------------------
 // Main
 // -----------------------------------------------------------------------------

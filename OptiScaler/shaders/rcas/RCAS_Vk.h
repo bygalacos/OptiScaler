@@ -137,8 +137,8 @@ class RCAS_Vk : public Shader_Vk
                                VkImageView InResourceView, VkImageView InMotionVectorsView, VkImageView OutResourceView,
                                VkExtent2D OutExtent, VkImageView InDepthView);
     bool DispatchDASDepthAdaptive(VkDevice InDevice, VkCommandBuffer InCmdList, RcasConstants InConstants,
-                                 VkImageView InResourceView, VkImageView InMotionVectorsView,
-                                 VkImageView OutResourceView, VkExtent2D OutExtent, VkImageView InDepthView);
+                                  VkImageView InResourceView, VkImageView InMotionVectorsView,
+                                  VkImageView OutResourceView, VkExtent2D OutExtent, VkImageView InDepthView);
 
     VkImageView _intermediateImageView = VK_NULL_HANDLE;
     VkImage _intermediateImage = VK_NULL_HANDLE;

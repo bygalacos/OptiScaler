@@ -789,8 +789,9 @@ HRESULT STDMETHODCALLTYPE WrappedIDXGISwapChain4::ResizeBuffers(UINT BufferCount
     WaitForGPUIdle(_device);
 
     // Release swapchain backbuffers to prevent errors when resizing
+    /*
     if (State::Instance().activeFgOutput != FGOutput::NoFG && State::Instance().activeFgOutput != FGOutput::Nukems &&
-        State::Instance().currentFG != nullptr)
+        State::Instance().activeFgInput != FGInput::Upscaler && State::Instance().currentFG != nullptr)
     {
         IDXGISwapChain* skSC = nullptr;
         if (_real->QueryInterface(IID_IUnwrappedDXGISwapChain, (void**) &skSC) == S_OK && skSC != nullptr)
@@ -833,6 +834,7 @@ HRESULT STDMETHODCALLTYPE WrappedIDXGISwapChain4::ResizeBuffers(UINT BufferCount
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+    */
 
 #ifdef DXGI_DEBUG_ENABLED
     ReportDXGILiveObjects();
@@ -1160,8 +1162,9 @@ HRESULT STDMETHODCALLTYPE WrappedIDXGISwapChain4::ResizeBuffers1(UINT BufferCoun
     WaitForGPUIdle(_device);
 
     // Release swapchain backbuffers to prevent errors when resizing
+    /*
     if (State::Instance().activeFgOutput != FGOutput::NoFG && State::Instance().activeFgOutput != FGOutput::Nukems &&
-        State::Instance().currentFG != nullptr)
+        State::Instance().activeFgInput != FGInput::Upscaler && State::Instance().currentFG != nullptr)
     {
         IDXGISwapChain* skSC = nullptr;
         if (_real->QueryInterface(IID_IUnwrappedDXGISwapChain, (void**) &skSC) == S_OK && skSC != nullptr)
@@ -1226,6 +1229,7 @@ HRESULT STDMETHODCALLTYPE WrappedIDXGISwapChain4::ResizeBuffers1(UINT BufferCoun
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+    */
 
 #ifdef DXGI_DEBUG_ENABLED
     ReportDXGILiveObjects();

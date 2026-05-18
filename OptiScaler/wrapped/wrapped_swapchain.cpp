@@ -1225,29 +1225,29 @@ HRESULT STDMETHODCALLTYPE WrappedIDXGISwapChain4::ResizeBuffers1(UINT BufferCoun
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
 
 #ifdef DXGI_DEBUG_ENABLED
-        ReportDXGILiveObjects();
+    ReportDXGILiveObjects();
 
 #ifdef ENABLE_DEBUG_LAYER_DX12
-        ReportD3D12LiveObjects(State::Instance().currentD3D12Device);
+    ReportD3D12LiveObjects(State::Instance().currentD3D12Device);
 #endif
 #endif
 
-        if (Config::Instance()->FGDontUseSwapchainBuffers.value_or_default())
-        {
-            ScopedSkipHeapCapture skipHeapCapture {};
+    if (Config::Instance()->FGDontUseSwapchainBuffers.value_or_default())
+    {
+        ScopedSkipHeapCapture skipHeapCapture {};
 
-            _lastFlags = SwapChainFlags;
-            result = _real3->ResizeBuffers1(BufferCount, Width, Height, Format, SwapChainFlags, pCreationNodeMask,
-                                            ppPresentQueue);
-        }
-        else
-        {
-            _lastFlags = SwapChainFlags;
-            result = _real3->ResizeBuffers1(BufferCount, Width, Height, Format, SwapChainFlags, pCreationNodeMask,
-                                            ppPresentQueue);
-        }
+        _lastFlags = SwapChainFlags;
+        result = _real3->ResizeBuffers1(BufferCount, Width, Height, Format, SwapChainFlags, pCreationNodeMask,
+                                        ppPresentQueue);
+    }
+    else
+    {
+        _lastFlags = SwapChainFlags;
+        result = _real3->ResizeBuffers1(BufferCount, Width, Height, Format, SwapChainFlags, pCreationNodeMask,
+                                        ppPresentQueue);
     }
 
 #ifdef DXGI_DEBUG_ENABLED

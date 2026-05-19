@@ -2220,10 +2220,7 @@ bool MenuCommon::RenderMenu()
         ImGui::SetNextWindowBgAlpha(config->FpsOverlayAlpha.value_or_default()); // Transparent background
 
         ImVec4 green(0.0f, 1.0f, 0.0f, 1.0f);
-        if (state.isHdrActive)
-            ImGui::PushStyleColor(ImGuiCol_PlotLines, toneMapColor(green)); // Tone Map plot line color
-        else
-            ImGui::PushStyleColor(ImGuiCol_PlotLines, green);
+        ImGui::PushStyleColor(ImGuiCol_PlotLines, toneMapColor(green));
 
         if (ImGui::Begin("Performance Overlay", nullptr,
                          ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDecoration |
@@ -2517,7 +2514,7 @@ bool MenuCommon::RenderMenu()
                         if (!timingData[type].has_value())
                             return;
 
-                        auto toneMappedColor = State::Instance().isHdrActive ? toneMapColor(color) : color;
+                        auto toneMappedColor = toneMapColor(color);
 
                         auto& timing = timingData[type].value();
                         float duration = static_cast<float>(timing.length * rangeInNs / 1000.0);
@@ -2661,7 +2658,7 @@ bool MenuCommon::RenderMenu()
                 if (versionStatus.updateAvailable && !versionStatus.latestTag.empty())
                 {
                     ImGui::Spacing();
-                    ImGui::TextColored(ImVec4(1.f, 0.8f, 0.f, 1.f), "Update available: %s (current %s)",
+                    ImGui::TextColored(toneMapColor(ImVec4(1.f, 0.8f, 0.f, 1.f)), "Update available: %s (current %s)",
                                        versionStatus.latestTag.c_str(), currentVersionText.c_str());
 
                     if (!versionStatus.latestUrl.empty())
@@ -2681,7 +2678,7 @@ bool MenuCommon::RenderMenu()
                 // else if (!versionStatus.error.empty())
                 //{
                 //    ImGui::Spacing();
-                //    ImGui::TextColored(ImVec4(1.f, 0.4f, 0.f, 1.f), "%s", versionStatus.error.c_str());
+                //    ImGui::TextColored(toneMapColor(ImVec4(1.f, 0.4f, 0.f, 1.f)), "%s", versionStatus.error.c_str());
                 //    ImGui::Spacing();
                 //}
             }
@@ -2911,7 +2908,8 @@ bool MenuCommon::RenderMenu()
                     if (state.isRunningOnNvidia && !state.NVNGX_DLSS_Path.has_value())
                     {
                         ImGui::Spacing();
-                        ImGui::TextColored(ImVec4(1.f, 0.8f, 0.f, 1.f), "nvngx_dlss.dll not found, DLSS disabled!");
+                        ImGui::TextColored(toneMapColor(ImVec4(1.f, 0.8f, 0.f, 1.f)),
+                                           "nvngx_dlss.dll not found, DLSS disabled!");
                     }
                 }
 
@@ -3353,7 +3351,8 @@ bool MenuCommon::RenderMenu()
 
                         if (overridden)
                         {
-                            ImGui::TextColored(ImVec4(1.f, 0.8f, 0.f, 1.f), "Presets are overridden externally");
+                            ImGui::TextColored(toneMapColor(ImVec4(1.f, 0.8f, 0.f, 1.f)),
+                                               "Presets are overridden externally");
                             ShowHelpMarker("This usually happens due to using tools\n"
                                            "such as Nvidia App or Nvidia Inspector");
                             // ImGui::Text("Selecting setting below will disable that external override\n"
@@ -3671,7 +3670,8 @@ bool MenuCommon::RenderMenu()
                     if (state.fgSettingsChanged)
                     {
                         ImGui::Spacing();
-                        ImGui::TextColored(ImVec4(1.f, 0.f, 0.0f, 1.f), "Save INI and restart to apply the changes");
+                        ImGui::TextColored(toneMapColor(ImVec4(1.f, 0.f, 0.0f, 1.f)),
+                                           "Save INI and restart to apply the changes");
                         ImGui::Spacing();
                     }
 
@@ -4141,19 +4141,20 @@ bool MenuCommon::RenderMenu()
                         bool cantActivate = false;
                         if (restartNeeded)
                         {
-                            ImGui::TextColored(ImVec4(1.f, 0.8f, 0.f, 1.f),
+                            ImGui::TextColored(toneMapColor(ImVec4(1.f, 0.8f, 0.f, 1.f)),
                                                "Restart the game to apply correct XeFG settings!");
                         }
                         else
                         {
                             if (!correctMVs)
-                                ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f),
+                                ImGui::TextColored(toneMapColor(ImVec4(1.f, 0.f, 0.f, 1.f)),
                                                    "Requires disabling dilated motion vectors");
 
                             if (!ignoreChecks && state.realExclusiveFullscreen)
                             {
                                 cantActivate = true;
-                                ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "Borderless display mode required!");
+                                ImGui::TextColored(toneMapColor(ImVec4(1.f, 0.f, 0.f, 1.f)),
+                                                   "Borderless display mode required!");
                             }
 
                             if (!ignoreChecks && state.isHdrActive)
@@ -4162,7 +4163,8 @@ bool MenuCommon::RenderMenu()
                                     state.currentSwapchainDesc.BufferDesc.Format < 15)
                                 {
                                     cantActivate = true;
-                                    ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.f), "XeFG only supports HDR10");
+                                    ImGui::TextColored(toneMapColor(ImVec4(1.0f, 0.0f, 0.0f, 1.f)),
+                                                       "XeFG only supports HDR10");
                                 }
                             }
                         }
@@ -4605,12 +4607,12 @@ bool MenuCommon::RenderMenu()
                     }
                     else if (state.activeFgOutput == FGOutput::FSRFG && !FfxApiProxy::IsFGReady())
                     {
-                        ImGui::TextColored({ 1.0f, 0.0f, 0.0f, 1.0f },
+                        ImGui::TextColored(toneMapColor({ 1.0f, 0.0f, 0.0f, 1.0f }),
                                            "amd_fidelityfx_dx12.dll is missing!"); // Probably never will be visible
                     }
                     else if (state.activeFgOutput == FGOutput::XeFG && XeFGProxy::Module() == nullptr)
                     {
-                        ImGui::TextColored({ 1.0f, 0.0f, 0.0f, 1.0f },
+                        ImGui::TextColored(toneMapColor({ 1.0f, 0.0f, 0.0f, 1.0f }),
                                            "libxess_fg.dll is missing!"); // Probably never will be visible
                     }
                 }
@@ -4623,12 +4625,12 @@ bool MenuCommon::RenderMenu()
                                             "Requires Nukem's dlssg_to_fsr3 dll\nSelect DLSS-FG in-game");
 
                     if (!state.NukemsFilesAvailable)
-                        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f),
+                        ImGui::TextColored(toneMapColor(ImVec4(1.f, 0.f, 0.f, 1.f)),
                                            "Please put dlssg_to_fsr3_amd_is_better.dll next to OptiScaler");
 
                     if (!ReflexHooks::isReflexHooked())
                     {
-                        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "Reflex not hooked");
+                        ImGui::TextColored(toneMapColor(ImVec4(1.f, 0.f, 0.f, 1.f)), "Reflex not hooked");
                         ImGui::Text("If you are using an AMD/Intel GPU, then make sure you have Fakenvapi");
                     }
                     else if (!ReflexHooks::isDlssgDetected())
@@ -4642,9 +4644,9 @@ bool MenuCommon::RenderMenu()
                         ImGui::Text("Current DLSSG state:");
                         ImGui::SameLine();
                         if (ReflexHooks::isDlssgDetected())
-                            ImGui::TextColored(ImVec4(0.f, 1.f, 0.25f, 1.f), "ON");
+                            ImGui::TextColored(toneMapColor(ImVec4(0.f, 1.f, 0.25f, 1.f)), "ON");
                         else
-                            ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "OFF");
+                            ImGui::TextColored(toneMapColor(ImVec4(1.f, 0.f, 0.f, 1.f)), "OFF");
 
                         if (bool makeDepthCopy = config->MakeDepthCopy.value_or_default();
                             ImGui::Checkbox("Fix broken visuals", &makeDepthCopy))
@@ -4654,7 +4656,7 @@ bool MenuCommon::RenderMenu()
                     }
                     else if (state.swapchainApi == Vulkan)
                     {
-                        ImGui::TextColored(ImVec4(1.f, 0.8f, 0.f, 1.f),
+                        ImGui::TextColored(toneMapColor(ImVec4(1.f, 0.8f, 0.f, 1.f)),
                                            "DLSSG is purposefully disabled when this menu is visible");
                         ImGui::Spacing();
                     }
@@ -4696,13 +4698,13 @@ bool MenuCommon::RenderMenu()
                         if (state.FSRFGInputActive)
                         {
                             if (fgOutput->IsActive())
-                                ImGui::TextColored(ImVec4(0.f, 1.f, 0.25f, 1.f), "ON");
+                                ImGui::TextColored(toneMapColor(ImVec4(0.f, 1.f, 0.25f, 1.f)), "ON");
                             else
-                                ImGui::TextColored(ImVec4(1.0f, 0.647f, 0.0f, 1.f), "ACTIVATE FG");
+                                ImGui::TextColored(toneMapColor(ImVec4(1.0f, 0.647f, 0.0f, 1.f)), "ACTIVATE FG");
                         }
                         else
                         {
-                            ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "OFF");
+                            ImGui::TextColored(toneMapColor(ImVec4(1.f, 0.f, 0.f, 1.f)), "OFF");
                             ImGui::Text("Please select FSR Frame Generation in the game options\n"
                                         "You might need to select FSR first");
                         }
@@ -4733,7 +4735,7 @@ bool MenuCommon::RenderMenu()
 
                     if (!ReflexHooks::isReflexHooked())
                     {
-                        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "Reflex not hooked");
+                        ImGui::TextColored(toneMapColor(ImVec4(1.f, 0.f, 0.f, 1.f)), "Reflex not hooked");
                         ImGui::Text("If you are using an AMD/Intel GPU then make sure you have fakenvapi");
                     }
                     else if (fgOutput != nullptr)
@@ -4743,13 +4745,13 @@ bool MenuCommon::RenderMenu()
                         if ((state.FGLastFrame - state.DLSSGLastFrame) < 3)
                         {
                             if (fgOutput->IsActive())
-                                ImGui::TextColored(ImVec4(0.f, 1.f, 0.25f, 1.f), "ON");
+                                ImGui::TextColored(toneMapColor(ImVec4(0.f, 1.f, 0.25f, 1.f)), "ON");
                             else
-                                ImGui::TextColored(ImVec4(1.0f, 0.647f, 0.0f, 1.f), "ACTIVATE FG");
+                                ImGui::TextColored(toneMapColor(ImVec4(1.0f, 0.647f, 0.0f, 1.f)), "ACTIVATE FG");
                         }
                         else
                         {
-                            ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f), "OFF");
+                            ImGui::TextColored(toneMapColor(ImVec4(1.f, 0.f, 0.f, 1.f)), "OFF");
                             ImGui::Text("Please select DLSS Frame Generation in the game options\n"
                                         "You might need to select DLSS first");
                         }
@@ -4876,7 +4878,7 @@ bool MenuCommon::RenderMenu()
                             if (state.rtssReflexInjection && mode == Mode::AntiLag2 &&
                                 config->FGOutput == FGOutput::FSRFG)
                                 ImGui::TextColored(
-                                    ImVec4(1.f, 0.8f, 0.f, 1.f),
+                                    toneMapColor(ImVec4(1.f, 0.8f, 0.f, 1.f)),
                                     "Using RTSS Reflex injection with AntiLag 2 and FSR FG might cause issues");
                         }
                         else
@@ -4896,7 +4898,7 @@ bool MenuCommon::RenderMenu()
 
                     if (state.reflexShowWarning)
                     {
-                        ImGui::TextColored(ImVec4(1.f, 0.f, 0.f, 1.f),
+                        ImGui::TextColored(toneMapColor(ImVec4(1.f, 0.f, 0.f, 1.f)),
                                            "Using Reflex's limit with OptiFG has performance overhead");
 
                         ImGui::Spacing();
@@ -6764,7 +6766,7 @@ bool MenuCommon::RenderMenu()
                 {
                     ImGui::Spacing();
                     ImGui::TextColored(
-                        ImVec4(1.f, 0.f, 0.f, 1.f),
+                        toneMapColor(ImVec4(1.f, 0.f, 0.f, 1.f)),
                         "nvngx.ini detected, please move over to using OptiScaler.ini and delete the old config");
                     ImGui::Spacing();
                 }

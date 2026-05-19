@@ -562,6 +562,8 @@ bool Config::Reload(std::filesystem::path iniPath)
             CheckForUpdate.set_from_config(readBool("Hotfix", "CheckForUpdate"));
             DisableOverlays.set_from_config(readBool("Hotfix", "DisableOverlays"));
 
+            SimulateWaitableObject.set_from_config(readBool("Hotfix", "SimulateWaitableObject"));
+
             RoundInternalResolution.set_from_config(readInt("Hotfix", "RoundInternalResolution"));
 
             RestoreComputeSignature.set_from_config(readBool("Hotfix", "RestoreComputeSignature"));
@@ -1194,6 +1196,8 @@ bool Config::SaveIni()
         ini.SetValue("Hotfix", "DontCreateD3D12DeviceForLuma",
                      GetBoolValue(Instance()->DontCreateD3D12DeviceForLuma.value_for_config()).c_str());
         ini.SetValue("Hotfix", "CheckForUpdate", GetBoolValue(Instance()->CheckForUpdate.value_for_config()).c_str());
+        ini.SetValue("Hotfix", "SimulateWaitableObject",
+                     GetBoolValue(Instance()->SimulateWaitableObject.value_for_config()).c_str());
         ini.SetValue("Hotfix", "DisableOverlays", GetBoolValue(Instance()->DisableOverlays.value_for_config()).c_str());
 
         ini.SetValue("Hotfix", "RoundInternalResolution",

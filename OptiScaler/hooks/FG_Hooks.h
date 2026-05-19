@@ -25,6 +25,8 @@ class FGHooks
     using PFN_ResizeBuffers1 = rewrite_signature<decltype(&IDXGISwapChain3::ResizeBuffers1)>::type;
     using PFN_ResizeTarget = rewrite_signature<decltype(&IDXGISwapChain::ResizeTarget)>::type;
     using PFN_Release = rewrite_signature<decltype(&IUnknown::Release)>::type;
+    using PFN_GetFrameLatencyWaitableObject =
+        rewrite_signature<decltype(&IDXGISwapChain2::GetFrameLatencyWaitableObject)>::type;
 
     inline static PFN_ResizeBuffers o_FGSCResizeBuffers = nullptr;
     inline static PFN_ResizeTarget o_FGSCResizeTarget = nullptr;
@@ -35,6 +37,7 @@ class FGHooks
     inline static PFN_Present o_FGSCPresent = nullptr;
     inline static PFN_Present1 o_FGSCPresent1 = nullptr;
     inline static PFN_Release o_FGRelease = nullptr;
+    inline static PFN_GetFrameLatencyWaitableObject o_FGSCGetFrameLatencyWaitableObject = nullptr;
     inline static HWND _hwnd = nullptr;
     inline static bool _skipResize = false;
     inline static bool _skipResize1 = false;
@@ -62,6 +65,8 @@ class FGHooks
     static HRESULT FGPresent(IDXGISwapChain* This, UINT SyncInterval, UINT Flags,
                              const DXGI_PRESENT_PARAMETERS* pPresentParameters);
 
+    static HANDLE hkGetFrameLatencyWaitableObject(IDXGISwapChain2* This);
+
     VALIDATE_MEMBER_HOOK(hkFGPresent, PFN_Present)
     VALIDATE_MEMBER_HOOK(hkFGPresent1, PFN_Present1)
     VALIDATE_MEMBER_HOOK(hkSetFullscreenState, PFN_SetFullscreenState)
@@ -71,4 +76,5 @@ class FGHooks
     VALIDATE_MEMBER_HOOK(hkResizeBuffers1, PFN_ResizeBuffers1)
     VALIDATE_MEMBER_HOOK(hkResizeTarget, PFN_ResizeTarget)
     VALIDATE_MEMBER_HOOK(hkFGRelease, PFN_Release)
+    VALIDATE_MEMBER_HOOK(hkGetFrameLatencyWaitableObject, PFN_GetFrameLatencyWaitableObject)
 };

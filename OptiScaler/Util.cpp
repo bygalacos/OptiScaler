@@ -114,7 +114,7 @@ std::string Util::GetWindowsName(const OSVERSIONINFOW& os)
     return "Unknown Windows Version";
 }
 
-static std::wstring ToLower(std::wstring value)
+std::wstring Util::ToLower(std::wstring value)
 {
     std::transform(value.begin(), value.end(), value.begin(),
                    [](wchar_t c) { return static_cast<wchar_t>(std::towlower(c)); });
@@ -145,14 +145,14 @@ static bool HasUnrealBinariesParentStructure(const std::filesystem::path& exePat
     if (binariesDir.empty())
         return false;
 
-    std::wstring binariesName = ToLower(binariesDir.filename().wstring());
+    std::wstring binariesName = Util::ToLower(binariesDir.filename().wstring());
 
     bool isBinariesFolder = binariesName == L"binaries";
 
     if (!isBinariesFolder)
         return false;
 
-    std::wstring platformName = ToLower(platformDir.filename().wstring());
+    std::wstring platformName = Util::ToLower(platformDir.filename().wstring());
 
     bool isWindowsPlatformFolder = platformName == L"win64" || platformName == L"win32" || platformName == L"wingdk" ||
                                    platformName == L"windows" || platformName.starts_with(L"win");

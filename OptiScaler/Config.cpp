@@ -578,7 +578,7 @@ bool Config::Reload(std::filesystem::path iniPath)
             MaskResourceBarrier.set_from_config(readInt("Hotfix", "ColorMaskResourceBarrier"));
             ExposureResourceBarrier.set_from_config(readInt("Hotfix", "ExposureResourceBarrier"));
             OutputResourceBarrier.set_from_config(readInt("Hotfix", "OutputResourceBarrier"));
-            DontCreateD3D12DeviceForLuma.set_from_config(readBool("Hotfix", "DontCreateD3D12DeviceForLuma"));
+            CreateD3D12DeviceForLuma.set_from_config(readBool("Hotfix", "CreateD3D12DeviceForLuma"));
         }
 
         // Dx11 with Dx12
@@ -1193,8 +1193,8 @@ bool Config::SaveIni()
 
     // Hotfixes
     {
-        ini.SetValue("Hotfix", "DontCreateD3D12DeviceForLuma",
-                     GetBoolValue(Instance()->DontCreateD3D12DeviceForLuma.value_for_config()).c_str());
+        ini.SetValue("Hotfix", "CreateD3D12DeviceForLuma",
+                     GetBoolValue(Instance()->CreateD3D12DeviceForLuma.value_for_config()).c_str());
         ini.SetValue("Hotfix", "CheckForUpdate", GetBoolValue(Instance()->CheckForUpdate.value_for_config()).c_str());
         ini.SetValue("Hotfix", "SimulateWaitableObject",
                      GetBoolValue(Instance()->SimulateWaitableObject.value_for_config()).c_str());

@@ -383,7 +383,7 @@ class Config
     CustomOptional<int32_t, NoDefault> MaskResourceBarrier;     // disabled by default
     CustomOptional<int32_t, NoDefault> OutputResourceBarrier;   // disabled by default
 
-    CustomOptional<bool> DontCreateD3D12DeviceForLuma { false };
+    CustomOptional<bool> CreateD3D12DeviceForLuma { false };
 
     // Upscalers
     CustomOptional<std::string, SoftDefault> Dx11Upscaler { "fsr22" };

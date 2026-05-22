@@ -1066,8 +1066,7 @@ static void CheckWorkingMode()
             // Do not load Reshade here is Luma is active and we will create D3D12 device for it
             // We will load Reshade after D3D12 device creation in that case
             if (reshadeModule == nullptr && Config::Instance()->LoadReShade.value_or_default() &&
-                (!(State::Instance().gameQuirks & GameQuirk::CreateD3D12DeviceForLuma) ||
-                 Config::Instance()->DontCreateD3D12DeviceForLuma.value_or_default()))
+                !Config::Instance()->CreateD3D12DeviceForLuma.value_or_default())
             {
                 auto rsFile = Util::ExePath().parent_path() / L"ReShade64.dll";
                 SetEnvironmentVariableW(L"RESHADE_DISABLE_LOADING_CHECK", L"1");
@@ -1513,8 +1512,10 @@ static void CheckQuirks()
         const auto& path = entry.path();
         if (path.extension() == L".addon")
         {
-            const auto fname = path.filename().wstring();
-            if (fname.rfind(L"Luma-", 0) == 0) // starts with "Luma-"
+            const auto fname = Util::ToLower(path.filename().wstring());
+
+            // starts with "luma-" or "dlaa-inject."
+            if (fname.rfind(L"luma-", 0) == 0 || fname.rfind(L"dlaa-inject.", 0) == 0)
             {
                 lumaDetected = true;
                 break;
@@ -1538,12 +1539,15 @@ static void CheckQuirks()
             Config::Instance()->DontUseNTShared.set_volatile_value(true);
         }
 
-        if (!Config::Instance()->DontCreateD3D12DeviceForLuma.value_or_default())
+        if (!Config::Instance()->CreateD3D12DeviceForLuma.has_value())
         {
             quirks |= GameQuirk::LoadD3D12Manually;
 
             if (Config::Instance()->LoadReShade.value_or_default())
+            {
+                Config::Instance()->CreateD3D12DeviceForLuma.set_volatile_value(true);
                 quirks |= GameQuirk::CreateD3D12DeviceForLuma;
+            }
         }
     }
 
@@ -1564,12 +1568,15 @@ static void CheckQuirks()
             Config::Instance()->DontUseNTShared.set_volatile_value(true);
         }
 
-        if (!Config::Instance()->DontCreateD3D12DeviceForLuma.value_or_default())
+        if (!Config::Instance()->CreateD3D12DeviceForLuma.has_value())
         {
             quirks |= GameQuirk::LoadD3D12Manually;
 
             if (Config::Instance()->LoadReShade.value_or_default())
+            {
+                Config::Instance()->CreateD3D12DeviceForLuma.set_volatile_value(true);
                 quirks |= GameQuirk::CreateD3D12DeviceForLuma;
+            }
         }
     }
 

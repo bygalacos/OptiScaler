@@ -97,7 +97,7 @@ static void InitD3D12DeviceForLuma(IDXGIFactory* factory)
 static void CheckLumaAndReShade(IDXGIFactory* factory)
 {
     if (!Config::Instance()->LoadReShade.value_or_default() ||
-        !(State::Instance().gameQuirks & GameQuirk::CreateD3D12DeviceForLuma) ||
+        !Config::Instance()->CreateD3D12DeviceForLuma.value_or_default() ||
         State::Instance().currentD3D12Device != nullptr || creatingD3D12DeviceForLuma)
     {
         return;
@@ -115,7 +115,7 @@ static void CheckLumaAndReShade(IDXGIFactory* factory)
     }
 
     // For Luma mod + Agility update we are creating D3D12 device early to prevent issues with Luma
-    if (State::Instance().gameQuirks & GameQuirk::CreateD3D12DeviceForLuma &&
+    if (Config::Instance()->CreateD3D12DeviceForLuma.value_or_default() &&
         State::Instance().currentD3D12Device == nullptr)
     {
         ScopedSkipDxgiLoadChecks skipDxgiLoadChecks {};

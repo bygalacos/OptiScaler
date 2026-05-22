@@ -791,34 +791,74 @@ LRESULT MenuCommon::WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             lastKey = rawData.data.keyboard.VKey;
 
             if (!inputMenu)
+            {
                 inputMenu = rawData.data.keyboard.VKey == Config::Instance()->ShortcutKey.value_or_default();
 
+                if (inputMenu)
+                    LOG_DEBUG("Menu key pressed, will be switching menu");
+            }
+
             if (!inputFps)
+            {
                 inputFps = rawData.data.keyboard.VKey == Config::Instance()->FpsShortcutKey.value_or_default();
 
+                if (inputFps)
+                    LOG_DEBUG("Menu key pressed, will be switching FPS");
+            }
+
             if (!inputFG)
+            {
                 inputFG = rawData.data.keyboard.VKey == Config::Instance()->FGShortcutKey.value_or_default();
 
+                if (inputFG)
+                    LOG_DEBUG("Menu key pressed, will be switching FG mode");
+            }
+
             if (!inputFpsCycle)
+            {
                 inputFpsCycle =
                     rawData.data.keyboard.VKey == Config::Instance()->FpsCycleShortcutKey.value_or_default();
+
+                if (inputFpsCycle)
+                    LOG_DEBUG("Menu key pressed, will be switching FPS mode");
         }
+    }
     }
 
     if (!lastKey && msg == WM_KEYUP)
         lastKey = static_cast<int>(wParam);
 
     if (!inputMenu)
+    {
         inputMenu = msg == WM_KEYUP && wParam == Config::Instance()->ShortcutKey.value_or_default();
 
+        if (inputMenu)
+            LOG_DEBUG("Menu key pressed, will be switching menu");
+    }
+
     if (!inputFps)
+    {
         inputFps = msg == WM_KEYUP && wParam == Config::Instance()->FpsShortcutKey.value_or_default();
 
+        if (inputFps)
+            LOG_DEBUG("Menu key pressed, will be switching FPS");
+    }
+
     if (!inputFG)
+    {
         inputFG = msg == WM_KEYUP && wParam == Config::Instance()->FGShortcutKey.value_or_default();
 
+        if (inputFG)
+            LOG_DEBUG("Menu key pressed, will be switching FG mode");
+    }
+
     if (!inputFpsCycle)
+    {
         inputFpsCycle = msg == WM_KEYUP && wParam == Config::Instance()->FpsCycleShortcutKey.value_or_default();
+
+        if (inputFpsCycle)
+            LOG_DEBUG("Menu key pressed, will be switching FPS mode");
+    }
 
     // SHIFT + DEL - Debug dump
     if (msg == WM_KEYUP && wParam == VK_DELETE && (GetKeyState(VK_SHIFT) & 0x8000))
@@ -7063,6 +7103,18 @@ bool MenuCommon::RenderMenu()
 
 void MenuCommon::Init(HWND InHwnd, bool isUWP)
 {
+    // Reset shutdown flag in case of re-init
+    State::Instance().isShuttingDown = false;
+
+    HWND oldHandle = nullptr;
+
+    if (_handle != nullptr)
+    {
+        oldHandle = _handle;
+        LOG_DEBUG("Old Handle: {:X}, ImGui Handle: {:X}", (size_t) oldHandle,
+                  (size_t) ImGui::GetMainViewport()->PlatformHandleRaw);
+    }
+
     _handle = InHwnd;
     _isVisible = false;
     _isUWP = isUWP;
@@ -7135,10 +7187,36 @@ void MenuCommon::Init(HWND InHwnd, bool isUWP)
         _hdrTonemapApplied = false;
     }
 
-    if (_oWndProc == nullptr && !isUWP)
-        _oWndProc = (WNDPROC) SetWindowLongPtr(InHwnd, GWLP_WNDPROC, (LONG_PTR) WndProc);
+    if ((_oWndProc == nullptr || oldHandle != _handle) && !isUWP)
+    {
+        if (oldHandle != nullptr && _oWndProc != nullptr)
+        {
+            LOG_DEBUG("Restoring old WndProc: {:X}", (ULONG64) _oWndProc);
 
-    LOG_DEBUG("_oWndProc: {0:X}", (ULONG64) _oWndProc);
+            SetLastError(0);
+            auto restoreResult = SetWindowLongPtr(oldHandle, GWLP_WNDPROC, (LONG_PTR) _oWndProc);
+            auto error = GetLastError();
+
+            if (restoreResult == 0 && error != 0)
+            {
+                LOG_ERROR("Failed to restore old WndProc. Error: {:X}", error);
+            }
+        }
+
+        SetLastError(0);
+        auto setResult = (WNDPROC) SetWindowLongPtr(_handle, GWLP_WNDPROC, (LONG_PTR) WndProc);
+        auto error = GetLastError();
+
+        if (setResult == nullptr && error != 0)
+        {
+            LOG_ERROR("Failed to hook WndProc. Error: {:X}", error);
+        }
+        else
+        {
+            _oWndProc = setResult;
+            LOG_DEBUG("_oWndProc: {:X}", (ULONG64) _oWndProc);
+        }
+    }
 
     if (!pfn_SetCursorPos_hooked)
         AttachHooks();
@@ -7154,7 +7232,16 @@ void MenuCommon::Shutdown()
 
     if (_oWndProc != nullptr)
     {
-        SetWindowLongPtr((HWND) ImGui::GetMainViewport()->PlatformHandleRaw, GWLP_WNDPROC, (LONG_PTR) _oWndProc);
+        auto handle = (HWND) ImGui::GetMainViewport()->PlatformHandleRaw;
+        SetLastError(0);
+        auto restoreResult = SetWindowLongPtr(handle, GWLP_WNDPROC, (LONG_PTR) _oWndProc);
+        auto error = GetLastError();
+
+        if (restoreResult == 0 && error != 0)
+        {
+            LOG_ERROR("Failed to restore old WndProc. Error: {:X}", error);
+        }
+
         _oWndProc = nullptr;
     }
 

@@ -1247,6 +1247,9 @@ static void printQuirks(flag_set<GameQuirk>& quirks)
     if (quirks & GameQuirk::PregmataFixDLSSModes)
         stringQuirks.push_back("Fix DLSS quality selection in Pragmata");
 
+    if (quirks & GameQuirk::UseManualInputs)
+        stringQuirks.push_back("Use manual input polling");
+
     state->detectedQuirks.append_range(stringQuirks);
     for (auto& stringQuirk : stringQuirks)
         spdlog::info("Quirk: {}", stringQuirk);
@@ -1499,6 +1502,13 @@ static void CheckQuirks()
     }
     else
         quirks.reset(GameQuirk::OldOverlayMenu);
+
+    if (quirks & GameQuirk::UseManualInputs && !Config::Instance()->ManualInputPolling.has_value())
+    {
+        Config::Instance()->ManualInputPolling.set_volatile_value(true);
+    }
+    else
+        quirks.reset(GameQuirk::UseManualInputs);
 
     // For Luma, we assume if Luma addon in game folder it's used
     const auto dir = Util::ExePath().parent_path();

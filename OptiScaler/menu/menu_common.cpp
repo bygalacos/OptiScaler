@@ -38,6 +38,7 @@ static bool inputMenu = false;
 static bool inputFG = false;
 static bool inputFps = false;
 static bool inputFpsCycle = false;
+static bool inputManual = false;
 static bool hasGamepad = false;
 static bool fsr31InitTried = false;
 static bool xefgInitTried = false;
@@ -133,6 +134,7 @@ static std::string updateNoticeTag;
 static std::string updateNoticeUrl;
 static float lastMenuScale = 0.0f;
 static CustomOptional<uint32_t> comboPreset { 0 };
+static int lastKey = 0;
 
 template <typename T, size_t N> struct RingBuffer
 {
@@ -206,6 +208,120 @@ inline std::string StrFmt(const char* fmt, ...)
     std::vsnprintf(out.data(), len + 1, fmt, args);
     va_end(args);
     return out;
+}
+
+bool IsKeyReleasedOnce(int vk)
+{
+    static bool previousDown[256] {};
+
+    if (vk <= 0 || vk >= 256)
+        return false;
+
+    bool isDown = (GetAsyncKeyState(vk) & 0x8000) != 0;
+    bool released = previousDown[vk] && !isDown;
+
+    previousDown[vk] = isDown;
+
+    return released;
+}
+
+void UpdateManualInput(HWND targetHwnd)
+{
+    ImGuiIO& io = ImGui::GetIO();
+
+    // Only capture input when target window is foreground
+    HWND foreground = GetForegroundWindow();
+    bool focused = foreground == targetHwnd;
+
+    io.AddFocusEvent(focused);
+
+    if (!focused)
+    {
+        io.AddMousePosEvent(-FLT_MAX, -FLT_MAX);
+        return;
+    }
+
+    const auto config = Config::Instance();
+
+    auto CheckShortcut = [&](int vk, bool& inputFlag, const char* logMessage)
+    {
+        if (inputFlag)
+            return;
+
+        if (vk <= 0 || vk >= 256)
+            return;
+
+        if (IsKeyReleasedOnce(vk))
+        {
+            lastKey = vk;
+            receivingWmInputs = false;
+            inputFlag = true;
+            LOG_DEBUG("{}", logMessage);
+        }
+    };
+
+    CheckShortcut(config->ShortcutKey.value_or_default(), inputMenu, "Menu key pressed, will be switching menu");
+
+    CheckShortcut(config->FpsShortcutKey.value_or_default(), inputFps, "Menu key pressed, will be switching FPS");
+
+    CheckShortcut(config->FGShortcutKey.value_or_default(), inputFG, "Menu key pressed, will be switching FG mode");
+
+    CheckShortcut(config->FpsCycleShortcutKey.value_or_default(), inputFpsCycle,
+                  "Menu key pressed, will be switching FPS mode");
+
+    // Mouse position
+    POINT cursorPos {};
+    GetCursorPos(&cursorPos);
+
+    POINT clientPos = cursorPos;
+    ScreenToClient(targetHwnd, &clientPos);
+
+    io.AddMousePosEvent(static_cast<float>(clientPos.x), static_cast<float>(clientPos.y));
+
+    // Mouse buttons
+    io.AddMouseButtonEvent(0, (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0);
+    io.AddMouseButtonEvent(1, (GetAsyncKeyState(VK_RBUTTON) & 0x8000) != 0);
+    io.AddMouseButtonEvent(2, (GetAsyncKeyState(VK_MBUTTON) & 0x8000) != 0);
+    io.AddMouseButtonEvent(3, (GetAsyncKeyState(VK_XBUTTON1) & 0x8000) != 0);
+    io.AddMouseButtonEvent(4, (GetAsyncKeyState(VK_XBUTTON2) & 0x8000) != 0);
+
+    // Common keyboard keys
+    auto AddKey = [&](ImGuiKey key, int vk) { io.AddKeyEvent(key, (GetAsyncKeyState(vk) & 0x8000) != 0); };
+
+    AddKey(ImGuiKey_Tab, VK_TAB);
+    AddKey(ImGuiKey_LeftArrow, VK_LEFT);
+    AddKey(ImGuiKey_RightArrow, VK_RIGHT);
+    AddKey(ImGuiKey_UpArrow, VK_UP);
+    AddKey(ImGuiKey_DownArrow, VK_DOWN);
+    AddKey(ImGuiKey_PageUp, VK_PRIOR);
+    AddKey(ImGuiKey_PageDown, VK_NEXT);
+    AddKey(ImGuiKey_Home, VK_HOME);
+    AddKey(ImGuiKey_End, VK_END);
+    AddKey(ImGuiKey_Insert, VK_INSERT);
+    AddKey(ImGuiKey_Delete, VK_DELETE);
+    AddKey(ImGuiKey_Backspace, VK_BACK);
+    AddKey(ImGuiKey_Space, VK_SPACE);
+    AddKey(ImGuiKey_Enter, VK_RETURN);
+    AddKey(ImGuiKey_Escape, VK_ESCAPE);
+
+    AddKey(ImGuiKey_LeftCtrl, VK_LCONTROL);
+    AddKey(ImGuiKey_LeftShift, VK_LSHIFT);
+    AddKey(ImGuiKey_LeftAlt, VK_LMENU);
+    AddKey(ImGuiKey_RightCtrl, VK_RCONTROL);
+    AddKey(ImGuiKey_RightShift, VK_RSHIFT);
+    AddKey(ImGuiKey_RightAlt, VK_RMENU);
+
+    // Letters
+    for (int vk = 'A'; vk <= 'Z'; vk++)
+    {
+        io.AddKeyEvent(static_cast<ImGuiKey>(ImGuiKey_A + (vk - 'A')), (GetAsyncKeyState(vk) & 0x8000) != 0);
+    }
+
+    // Numbers
+    for (int vk = '0'; vk <= '9'; vk++)
+    {
+        io.AddKeyEvent(static_cast<ImGuiKey>(ImGuiKey_0 + (vk - '0')), (GetAsyncKeyState(vk) & 0x8000) != 0);
+    }
 }
 
 void MenuCommon::ShowTooltip(const char* tip)
@@ -636,8 +752,6 @@ ImGuiKey MenuCommon::ImGui_ImplWin32_VirtualKeyToImGuiKey(WPARAM wParam)
         return ImGuiKey_None;
     }
 }
-
-static int lastKey = 0;
 
 class Keybind
 {
@@ -1874,6 +1988,9 @@ void MenuCommon::Present()
         lastFrameTime = now - lastTime;
 
     lastTime = now;
+
+    if (inputManual && _handle != nullptr)
+        UpdateManualInput(_handle);
 }
 
 bool MenuCommon::RenderMenu()
@@ -1900,6 +2017,9 @@ bool MenuCommon::RenderMenu()
         }
 
         lastTime = now;
+
+        if (inputManual && _handle != nullptr)
+            UpdateManualInput(_handle);
     }
     else
     {
@@ -7193,35 +7313,54 @@ void MenuCommon::Init(HWND InHwnd, bool isUWP)
         _hdrTonemapApplied = false;
     }
 
-    if ((_oWndProc == nullptr || oldHandle != _handle) && !isUWP)
+    DWORD hwndPid = 0;
+    DWORD hwndTid = GetWindowThreadProcessId(_handle, &hwndPid);
+
+    LOG_DEBUG("HWND: {:X}, IsWindow: {}, HWND PID: {}, Current PID: {}, HWND TID: {}, Current TID: {}",
+              (ULONG64) _handle, IsWindow(_handle), hwndPid, GetCurrentProcessId(), hwndTid, GetCurrentThreadId());
+
+    if (hwndPid == GetCurrentProcessId() && !Config::Instance()->ManualInputPolling.value_or_default())
     {
-        if (oldHandle != nullptr && _oWndProc != nullptr)
+        inputManual = false;
+
+        if ((_oWndProc == nullptr || oldHandle != _handle) && !isUWP)
         {
-            LOG_DEBUG("Restoring old WndProc: {:X}", (ULONG64) _oWndProc);
+            if (oldHandle != nullptr && _oWndProc != nullptr)
+            {
+                LOG_DEBUG("Restoring old WndProc: {:X}", (ULONG64) _oWndProc);
+
+                SetLastError(0);
+                auto restoreResult = SetWindowLongPtr(oldHandle, GWLP_WNDPROC, (LONG_PTR) _oWndProc);
+                auto error = GetLastError();
+
+                if (restoreResult == 0 && error != 0)
+                {
+                    LOG_ERROR("Failed to restore old WndProc. Error: {:X}", error);
+                }
+            }
 
             SetLastError(0);
-            auto restoreResult = SetWindowLongPtr(oldHandle, GWLP_WNDPROC, (LONG_PTR) _oWndProc);
+            auto setResult = (WNDPROC) SetWindowLongPtr(_handle, GWLP_WNDPROC, (LONG_PTR) WndProc);
             auto error = GetLastError();
 
-            if (restoreResult == 0 && error != 0)
+            if (setResult == nullptr && error != 0)
             {
-                LOG_ERROR("Failed to restore old WndProc. Error: {:X}", error);
+                LOG_ERROR("Failed to hook WndProc. Error: {:X}", error);
+            }
+            else
+            {
+                _oWndProc = setResult;
+                LOG_DEBUG("_oWndProc: {:X}", (ULONG64) _oWndProc);
             }
         }
+    }
+    else
+    {
+        LOG_WARN("HWND does not belong to current process,"
+                 " Manual input polling will be used. HWND PID: {}, Current PID: {}",
+                 hwndPid, GetCurrentProcessId());
 
-        SetLastError(0);
-        auto setResult = (WNDPROC) SetWindowLongPtr(_handle, GWLP_WNDPROC, (LONG_PTR) WndProc);
-        auto error = GetLastError();
-
-        if (setResult == nullptr && error != 0)
-        {
-            LOG_ERROR("Failed to hook WndProc. Error: {:X}", error);
-        }
-        else
-        {
-            _oWndProc = setResult;
-            LOG_DEBUG("_oWndProc: {:X}", (ULONG64) _oWndProc);
-        }
+        inputManual = true;
     }
 
     if (!pfn_SetCursorPos_hooked)

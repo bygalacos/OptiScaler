@@ -42,6 +42,7 @@ enum class GameQuirk : uint64_t
     DoNotPreserveFGSwapChain,
     DoNotSkipResize,
     OldOverlayMenu,
+    UseManualInputs,
 
     // Quirks that are applied deeper in code
     CyberpunkHudlessState,
@@ -280,7 +281,7 @@ static const QuirkEntry quirkTable[] = {
     // Metro Exodus Enhanced Edition
     // ForceBorderless required to avoid black screen with XeFG
     QUIRK_ENTRY("metroexodus.exe", GameQuirk::DisableDxgiSpoofing, GameQuirk::ForceBorderlessWhenUsingXeFG,
-                GameQuirk::ForceAutoExposure),
+                GameQuirk::ForceAutoExposure, GameQuirk::UseManualInputs),
 
     // Star Wars: Outlaws
     // SL spoof enough to unlock everything DLSS

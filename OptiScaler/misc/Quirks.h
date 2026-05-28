@@ -13,6 +13,7 @@ enum class GameQuirk : uint64_t
     DisableFFXInputs,
     RestoreComputeSigOnNonNvidia,
     RestoreComputeSigOnNvidia,
+    ExtendedSigRestore,
     ForceAutoExposure,
     DisableReactiveMasks,
     DisableDxgiSpoofing,
@@ -62,7 +63,6 @@ enum class GameQuirk : uint64_t
     ForceCreateD3D12Device,
     ForceDepthD32S8,
     PregmataFixDLSSModes,
-    ExtendedSigRestore,
     // Don't forget to add the new entry to printQuirks
     _
 };

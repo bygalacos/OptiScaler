@@ -8,9 +8,10 @@ class D3D12Hooks
     inline static std::mutex hookMutex;
     inline static std::mutex agilityMutex;
 
-    static void RestoreDescriptorHeaps(ID3D12GraphicsCommandList* cmdList);
-    static void RestorePipelineState(ID3D12GraphicsCommandList* cmdList);
-    static void RestoreComputeRoot(ID3D12GraphicsCommandList* cmdList);
+    static bool RestoreDescriptorHeaps(ID3D12GraphicsCommandList* cmdList);
+    static bool RestorePipelineState(ID3D12GraphicsCommandList* cmdList);
+    static bool RestoreComputeRootState(ID3D12GraphicsCommandList* cmdList);
+    static void RestoreComputeRootSignature(ID3D12GraphicsCommandList* cmdList);
 
   public:
     static void Hook();
@@ -21,6 +22,6 @@ class D3D12Hooks
     static bool CanRestoreComputeRootSignature(ID3D12GraphicsCommandList* cmdList);
     static bool CanRestoreGraphicsRootSignature(ID3D12GraphicsCommandList* cmdList);
     static void HookToCommandListLate(ID3D12GraphicsCommandList* commandList);
-    static void RestoreComputeRootSignature(ID3D12GraphicsCommandList* cmdList);
+    static void RestoreComputeRoot(ID3D12GraphicsCommandList* cmdList);
     static void RestoreGraphicsRootSignature(ID3D12GraphicsCommandList* cmdList);
 };

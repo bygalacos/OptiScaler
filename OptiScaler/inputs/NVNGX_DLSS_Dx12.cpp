@@ -695,7 +695,7 @@ NVSDK_NGX_API NVSDK_NGX_Result NVSDK_NGX_D3D12_CreateFeature(ID3D12GraphicsComma
         Config::Instance()->RestoreGraphicSignature.value_or_default())
     {
         if (Config::Instance()->RestoreComputeSignature.value_or_default())
-            D3D12Hooks::RestoreComputeRootSignature(InCmdList);
+            D3D12Hooks::RestoreComputeRoot(InCmdList);
 
         if (Config::Instance()->RestoreGraphicSignature.value_or_default())
             D3D12Hooks::RestoreGraphicsRootSignature(InCmdList);
@@ -977,7 +977,7 @@ NVSDK_NGX_API NVSDK_NGX_Result NVSDK_NGX_D3D12_EvaluateFeature(ID3D12GraphicsCom
         Config::Instance()->RestoreGraphicSignature.value_or_default())
     {
         if (Config::Instance()->RestoreComputeSignature.value_or_default())
-            D3D12Hooks::RestoreComputeRootSignature(InCmdList);
+            D3D12Hooks::RestoreComputeRoot(InCmdList);
 
         if (Config::Instance()->RestoreGraphicSignature.value_or_default())
             D3D12Hooks::RestoreGraphicsRootSignature(InCmdList);

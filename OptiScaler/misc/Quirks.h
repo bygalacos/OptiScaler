@@ -217,9 +217,10 @@ static const QuirkEntry quirkTable[] = {
                 GameQuirk::DisableFSR2Inputs),
 
     // 007 First Light
-    // SL spoof enough to unlock everything DLSS, RestoreCompute like Crapcom
+    // SL spoof enough to unlock everything DLSS, uses bindless so restoring compute is complicated
     QUIRK_ENTRY("007firstlight.exe", GameQuirk::DisableDxgiSpoofing, GameQuirk::RestoreComputeSigOnNonNvidia,
-                GameQuirk::RestoreComputeSigOnNvidia, GameQuirk::ExtendedSigRestore),
+                GameQuirk::RestoreComputeSigOnNvidia, GameQuirk::ExtendedSigRestore, GameQuirk::SetDepthValidNow,
+                GameQuirk::SetVelocityValidNow),
 
     // ELDEN RING (for ERSS mod) and ER NIGHTREIGN (for NRSS mod)
     // no spoof needed for DLSS inputs

@@ -44,6 +44,7 @@ DEFINE_NAME_VECTORS(overlay, "eosovh-win32-shipping",
                              "gameoverlayrenderer64",     // Steam
                              "socialclubd3d12renderer", // Rockstar
                              "owutils",                 // Overwolf
+                             "owclient",
                              "galaxy",
                              "galaxy64",                // GOG Galaxy
                              "discordhook",
@@ -76,6 +77,7 @@ DEFINE_NAME_VECTORS(skipDxgiWrapping, "eosovh-win32-shipping",
                                       "gameoverlayrenderer",
                                       "gameoverlayrenderer64",
                                       "socialclubd3d12renderer",
+                                      "owclient",
                                       "owutils",
                                       "galaxy",
                                       "galaxy64",

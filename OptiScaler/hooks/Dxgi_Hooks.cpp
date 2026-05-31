@@ -319,12 +319,17 @@ void DxgiHooks::Hook()
         return;
     }
 
-    if (o_CreateDXGIFactory != nullptr)
+    if (DxgiProxy::Module() == nullptr)
         return;
 
     LOG_DEBUG("");
 
-    o_CreateDXGIFactory = DxgiProxy::Hook_CreateDxgiFactory(hkCreateDXGIFactory);
-    o_CreateDXGIFactory1 = DxgiProxy::Hook_CreateDxgiFactory1(hkCreateDXGIFactory1);
-    o_CreateDXGIFactory2 = DxgiProxy::Hook_CreateDxgiFactory2(hkCreateDXGIFactory2);
+    if (o_CreateDXGIFactory == nullptr)
+        o_CreateDXGIFactory = DxgiProxy::Hook_CreateDxgiFactory(hkCreateDXGIFactory);
+
+    if (o_CreateDXGIFactory1 == nullptr)
+        o_CreateDXGIFactory1 = DxgiProxy::Hook_CreateDxgiFactory1(hkCreateDXGIFactory1);
+
+    if (o_CreateDXGIFactory2 == nullptr)
+        o_CreateDXGIFactory2 = DxgiProxy::Hook_CreateDxgiFactory2(hkCreateDXGIFactory2);
 }

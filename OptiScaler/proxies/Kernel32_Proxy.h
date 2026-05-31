@@ -73,7 +73,12 @@ class Kernel32Proxy
         DetourTransactionBegin();                                                                                      \
         DetourUpdateThread(GetCurrentThread());                                                                        \
         DetourAttach(&(PVOID&) addr, method);                                                                          \
-        DetourTransactionCommit();                                                                                     \
+        auto detourResult = DetourTransactionCommit();                                                                 \
+        if (detourResult != NO_ERROR)                                                                                  \
+        {                                                                                                              \
+            LOG_ERROR("Failed to hook: {:X}", detourResult);                                                           \
+            return nullptr;                                                                                            \
+        }                                                                                                              \
         _##name = addr;                                                                                                \
         return addr;                                                                                                   \
     }

@@ -374,7 +374,21 @@ void FGHooks::HookFGSwapchain(IDXGISwapChain* pSwapChain)
             }
         }
 
-        DetourTransactionCommit();
+        auto detourResult = DetourTransactionCommit();
+        if (detourResult != NO_ERROR)
+        {
+            LOG_ERROR("Failed to attach detour: {:X}", detourResult);
+            o_FGRelease = nullptr;
+            o_FGSCPresent = nullptr;
+            o_FGSCSetFullscreenState = nullptr;
+            o_FGSCGetFullscreenState = nullptr;
+            o_FGSCResizeBuffers = nullptr;
+            o_FGSCResizeTarget = nullptr;
+            o_FGSCGetFullscreenDesc = nullptr;
+            o_FGSCPresent1 = nullptr;
+            o_FGSCResizeBuffers1 = nullptr;
+            o_FGSCGetFrameLatencyWaitableObject = nullptr;
+        }
     }
 }
 

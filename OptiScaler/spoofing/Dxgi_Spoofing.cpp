@@ -358,7 +358,15 @@ void DxgiSpoofing::AttachToAdapter(IUnknown* unkAdapter)
     if (adapter4 != nullptr)
         adapter4->Release();
 
-    DetourTransactionCommit();
+    auto detourResult = DetourTransactionCommit();
+    if (detourResult != NO_ERROR)
+    {
+        LOG_ERROR("DetourTransactionCommit error: {:X}", detourResult);
+        o_GetDesc = nullptr;
+        o_GetDesc1 = nullptr;
+        o_GetDesc2 = nullptr;
+        o_GetDesc3 = nullptr;
+    }
 }
 
 #pragma endregion

@@ -63,7 +63,13 @@ static void HookDevice(VkDevice InDevice)
         DetourAttach(&(PVOID&) o_QueuePresentKHR, hkvkQueuePresentKHR);
         DetourAttach(&(PVOID&) o_CreateSwapchainKHR, hkvkCreateSwapchainKHR);
 
-        DetourTransactionCommit();
+        auto detourResult = DetourTransactionCommit();
+        if (detourResult != NO_ERROR)
+        {
+            LOG_ERROR("Failed to hook VkDevice, error code: {:X}", detourResult);
+            o_QueuePresentKHR = nullptr;
+            o_CreateSwapchainKHR = nullptr;
+        }
     }
 }
 
@@ -373,7 +379,17 @@ void VulkanHooks::Hook(HMODULE vulkan1)
     // if (o_vkCmdPipelineBarrier != nullptr)
     //     DetourAttach(&(PVOID&) o_vkCmdPipelineBarrier, hkvkCmdPipelineBarrier);
 
-    DetourTransactionCommit();
+    auto detourResult = DetourTransactionCommit();
+    if (detourResult != NO_ERROR)
+    {
+        LOG_ERROR("Failed to hook Vulkan, error code: {:X}", detourResult);
+        o_vkCreateDevice = nullptr;
+        o_vkCreateInstance = nullptr;
+        o_vkGetInstanceProcAddr = nullptr;
+        o_vkGetDeviceProcAddr = nullptr;
+        o_vkCreateWin32SurfaceKHR = nullptr;
+        // o_vkCmdPipelineBarrier = nullptr;
+    }
 }
 
 void VulkanHooks::Unhook()
@@ -399,5 +415,20 @@ void VulkanHooks::Unhook()
     // if (o_vkCmdPipelineBarrier != nullptr)
     //     DetourDetach(&(PVOID&) o_vkCmdPipelineBarrier, hkvkCmdPipelineBarrier);
 
-    DetourTransactionCommit();
+    auto detourResult = DetourTransactionCommit();
+    if (detourResult != NO_ERROR)
+    {
+        LOG_ERROR("Failed to unhook Vulkan, error code: {:X}", detourResult);
+    }
+    else
+    {
+        o_QueuePresentKHR = nullptr;
+        o_CreateSwapchainKHR = nullptr;
+        o_vkCreateDevice = nullptr;
+        o_vkCreateInstance = nullptr;
+        o_vkGetInstanceProcAddr = nullptr;
+        o_vkGetDeviceProcAddr = nullptr;
+        o_vkCreateWin32SurfaceKHR = nullptr;
+        // o_vkCmdPipelineBarrier = nullptr;
+    }
 }

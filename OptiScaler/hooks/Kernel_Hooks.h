@@ -69,29 +69,47 @@ class KernelHooks
     {
         std::lock_guard<std::mutex> lock(hookMutex32);
 
-        if (o_K32_FreeLibrary != nullptr)
-            return;
-
         LOG_DEBUG("");
 
-        o_K32_GetProcAddress = Kernel32Proxy::Hook_GetProcAddress(hk_K32_GetProcAddress);
-        o_K32_GetModuleHandleA = Kernel32Proxy::Hook_GetModuleHandleA(hk_K32_GetModuleHandleA);
-        o_K32_GetModuleHandleExW = Kernel32Proxy::Hook_GetModuleHandleExW(hk_K32_GetModuleHandleExW);
-        o_K32_GetFileAttributesW = Kernel32Proxy::Hook_GetFileAttributesW(hk_K32_GetFileAttributesW);
-        o_K32_CreateFileW = Kernel32Proxy::Hook_CreateFileW(hk_K32_CreateFileW);
+        if (o_K32_GetProcAddress == nullptr)
+            o_K32_GetProcAddress = Kernel32Proxy::Hook_GetProcAddress(hk_K32_GetProcAddress);
+
+        if (o_K32_GetModuleHandleA == nullptr)
+            o_K32_GetModuleHandleA = Kernel32Proxy::Hook_GetModuleHandleA(hk_K32_GetModuleHandleA);
+
+        if (o_K32_GetModuleHandleExW == nullptr)
+            o_K32_GetModuleHandleExW = Kernel32Proxy::Hook_GetModuleHandleExW(hk_K32_GetModuleHandleExW);
+
+        if (o_K32_GetFileAttributesW == nullptr)
+            o_K32_GetFileAttributesW = Kernel32Proxy::Hook_GetFileAttributesW(hk_K32_GetFileAttributesW);
+
+        if (o_K32_CreateFileW == nullptr)
+            o_K32_CreateFileW = Kernel32Proxy::Hook_CreateFileW(hk_K32_CreateFileW);
 
 #ifdef HOOK_OUTPUT_DEBUG
-        o_K32_OutputDebugStringW = Kernel32Proxy::Hook_OutputDebugStringW(hk_K32_OutputDebugStringW);
-        o_K32_OutputDebugStringA = Kernel32Proxy::Hook_OutputDebugStringA(hk_K32_OutputDebugStringA);
+        if (o_K32_OutputDebugStringW == nullptr)
+            o_K32_OutputDebugStringW = Kernel32Proxy::Hook_OutputDebugStringW(hk_K32_OutputDebugStringW);
+
+        if (o_K32_OutputDebugStringA == nullptr)
+            o_K32_OutputDebugStringA = Kernel32Proxy::Hook_OutputDebugStringA(hk_K32_OutputDebugStringA);
 #endif
 
         if (!Config::Instance()->UseNtdllHooks.value_or_default())
         {
-            o_K32_FreeLibrary = Kernel32Proxy::Hook_FreeLibrary(hk_K32_FreeLibrary);
-            o_K32_LoadLibraryA = Kernel32Proxy::Hook_LoadLibraryA(hk_K32_LoadLibraryA);
-            o_K32_LoadLibraryW = Kernel32Proxy::Hook_LoadLibraryW(hk_K32_LoadLibraryW);
-            o_K32_LoadLibraryExA = Kernel32Proxy::Hook_LoadLibraryExA(hk_K32_LoadLibraryExA);
-            o_K32_LoadLibraryExW = Kernel32Proxy::Hook_LoadLibraryExW(hk_K32_LoadLibraryExW);
+            if (o_K32_FreeLibrary == nullptr)
+                o_K32_FreeLibrary = Kernel32Proxy::Hook_FreeLibrary(hk_K32_FreeLibrary);
+
+            if (o_K32_LoadLibraryA == nullptr)
+                o_K32_LoadLibraryA = Kernel32Proxy::Hook_LoadLibraryA(hk_K32_LoadLibraryA);
+
+            if (o_K32_LoadLibraryW == nullptr)
+                o_K32_LoadLibraryW = Kernel32Proxy::Hook_LoadLibraryW(hk_K32_LoadLibraryW);
+
+            if (o_K32_LoadLibraryExA == nullptr)
+                o_K32_LoadLibraryExA = Kernel32Proxy::Hook_LoadLibraryExA(hk_K32_LoadLibraryExA);
+
+            if (o_K32_LoadLibraryExW == nullptr)
+                o_K32_LoadLibraryExW = Kernel32Proxy::Hook_LoadLibraryExW(hk_K32_LoadLibraryExW);
         }
     }
 
@@ -99,16 +117,15 @@ class KernelHooks
     {
         std::lock_guard<std::mutex> lock(hookMutexBase);
 
-        if (o_KB_GetProcAddress != nullptr)
-            return;
-
         LOG_DEBUG("");
 
-        o_KB_GetProcAddress = KernelBaseProxy::Hook_GetProcAddress(hk_KB_GetProcAddress);
+        if (o_KB_GetProcAddress == nullptr)
+            o_KB_GetProcAddress = KernelBaseProxy::Hook_GetProcAddress(hk_KB_GetProcAddress);
 
         if (!Config::Instance()->UseNtdllHooks.value_or_default())
         {
-            o_KB_LoadLibraryExW = KernelBaseProxy::Hook_LoadLibraryExW(hk_KB_LoadLibraryExW);
+            if (o_KB_LoadLibraryExW == nullptr)
+                o_KB_LoadLibraryExW = KernelBaseProxy::Hook_LoadLibraryExW(hk_KB_LoadLibraryExW);
         }
     }
 };

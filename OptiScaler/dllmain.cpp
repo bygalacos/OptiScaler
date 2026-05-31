@@ -146,7 +146,13 @@ static void RunAgilityUpgrade(HMODULE dx12Module)
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourAttach(&(PVOID&) o_IsDeveloperModeEnabled, static_cast<HRESULT (*)(BOOL*)>(hk_IsDeveloperModeEnabled));
-    DetourTransactionCommit();
+    auto detourResult = DetourTransactionCommit();
+
+    if (detourResult != NO_ERROR)
+    {
+        LOG_ERROR("Failed to attach detour: {:X}", detourResult);
+        return;
+    }
 
     if (Config::Instance()->FsrAgilitySDKUpgrade.value_or_default())
     {
@@ -191,7 +197,13 @@ static void RunAgilityUpgrade(HMODULE dx12Module)
     DetourTransactionBegin();
     DetourUpdateThread(GetCurrentThread());
     DetourDetach(&(PVOID&) o_IsDeveloperModeEnabled, static_cast<HRESULT (*)(BOOL*)>(hk_IsDeveloperModeEnabled));
-    DetourTransactionCommit();
+    detourResult = DetourTransactionCommit();
+
+    if (detourResult != NO_ERROR)
+    {
+        LOG_ERROR("Failed to detach detour: {:X}", detourResult);
+        return;
+    }
 }
 
 void LoadAsiPlugins()

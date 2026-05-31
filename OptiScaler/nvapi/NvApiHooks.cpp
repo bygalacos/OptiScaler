@@ -163,7 +163,12 @@ void NvApiHooks::Hook(HMODULE nvapiModule)
         DetourTransactionBegin();
         DetourUpdateThread(GetCurrentThread());
         DetourAttach(&(PVOID&) o_NvAPI_QueryInterface, hkNvAPI_QueryInterface);
-        DetourTransactionCommit();
+        auto detourResult = DetourTransactionCommit();
+        if (detourResult != NO_ERROR)
+        {
+            LOG_ERROR("Failed to hook NvAPI_QueryInterface: {:X}", detourResult);
+            o_NvAPI_QueryInterface = nullptr;
+        }
     }
 }
 
@@ -173,10 +178,15 @@ void NvApiHooks::Unhook()
     DetourUpdateThread(GetCurrentThread());
 
     if (o_NvAPI_QueryInterface != nullptr)
-    {
         DetourDetach(&(PVOID&) o_NvAPI_QueryInterface, hkNvAPI_QueryInterface);
+
+    auto detourResult = DetourTransactionCommit();
+    if (detourResult != NO_ERROR)
+    {
+        LOG_ERROR("Failed to unhook NvAPI_QueryInterface: {:X}", detourResult);
+    }
+    else
+    {
         o_NvAPI_QueryInterface = nullptr;
     }
-
-    DetourTransactionCommit();
 }

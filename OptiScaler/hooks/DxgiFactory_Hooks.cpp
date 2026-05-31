@@ -138,7 +138,18 @@ void DxgiFactoryHooks::HookToFactory(IDXGIFactory* pFactory)
         }
     }
 
-    DetourTransactionCommit();
+    auto detourResult = DetourTransactionCommit();
+    if (detourResult != NO_ERROR)
+    {
+        LOG_ERROR("Failed to hook IDXGIFactory: {:X}", detourResult);
+        o_EnumAdapters = nullptr;
+        o_CreateSwapChain = nullptr;
+        o_EnumAdapters1 = nullptr;
+        o_CreateSwapChainForHwnd = nullptr;
+        o_CreateSwapChainForCoreWindow = nullptr;
+        o_EnumAdapterByLuid = nullptr;
+        o_EnumAdapterByGpuPreference = nullptr;
+    }
 }
 
 HRESULT DxgiFactoryHooks::CreateSwapChain(IDXGIFactory* realFactory, IUnknown* pDevice, DXGI_SWAP_CHAIN_DESC* pDesc,

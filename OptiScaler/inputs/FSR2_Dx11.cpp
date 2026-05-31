@@ -473,7 +473,19 @@ void HookFSR2Dx11ExeInputs()
         LOG_DEBUG("o_ffxFsr2GetJitterPhaseCount_Dx11: {:X}", (size_t) o_ffxFsr2GetJitterPhaseCount_Dx11);
     }
 
-    State::Instance().fsrHooks = o_ffxFsr2ContextCreate_Dx11 != nullptr;
-
-    DetourTransactionCommit();
+    auto detourResult = DetourTransactionCommit();
+    if (detourResult != NO_ERROR)
+    {
+        LOG_ERROR("Failed to hook FSR2 Dx11 methods, error code: {:X}", detourResult);
+        o_ffxFsr2ContextCreate_Dx11 = nullptr;
+        o_ffxFsr2ContextDispatch_Dx11 = nullptr;
+        o_ffxFsr2ContextDestroy_Dx11 = nullptr;
+        o_ffxFsr2GetUpscaleRatioFromQualityMode_Dx11 = nullptr;
+        o_ffxFsr2GetRenderResolutionFromQualityMode_Dx11 = nullptr;
+        o_ffxFsr2GetJitterPhaseCount_Dx11 = nullptr;
+    }
+    else
+    {
+        State::Instance().fsrHooks = o_ffxFsr2ContextCreate_Dx11 != nullptr;
+    }
 }

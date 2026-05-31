@@ -66,7 +66,12 @@ static void hookCrypt32()
 
         DetourAttach(&(PVOID&) o_CryptQueryObject, hkCryptQueryObject);
 
-        DetourTransactionCommit();
+        auto detourResult = DetourTransactionCommit();
+        if (detourResult != NO_ERROR)
+        {
+            LOG_ERROR("Failed to hook CryptQueryObject: {:X}", detourResult);
+            o_CryptQueryObject = nullptr;
+        }
     }
 }
 
@@ -78,8 +83,15 @@ static void unhookCrypt32()
         DetourUpdateThread(GetCurrentThread());
 
         DetourDetach(&(PVOID&) o_CryptQueryObject, hkCryptQueryObject);
-        o_CryptQueryObject = nullptr;
 
-        DetourTransactionCommit();
+        auto detourResult = DetourTransactionCommit();
+        if (detourResult != NO_ERROR)
+        {
+            LOG_ERROR("Failed to unhook CryptQueryObject: {:X}", detourResult);
+        }
+        else
+        {
+            o_CryptQueryObject = nullptr;
+        }
     }
 }

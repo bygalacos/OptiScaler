@@ -960,6 +960,7 @@ void HookFSR2ExeInputs()
         KernelBaseProxy::GetProcAddress_()(exeModule, "ffxGetResourceKTGL") != nullptr)
     {
         LOG_WARN("Katana Engine exports detected, disabling FSR2 hooks!");
+        State::Instance().GameEngine = GameEngineType::Katana;
         return;
     }
 
@@ -1241,10 +1242,24 @@ void HookFSR2ExeInputs()
         // LOG_DEBUG("Pattern matching finished");
     }
 
-    State::Instance().fsrHooks =
-        o_ffxFsr2ContextCreate_Dx12 != nullptr || o_ffxFsr2ContextCreate_Pattern_Dx12 != nullptr;
-
-    DetourTransactionCommit();
+    auto detourResult = DetourTransactionCommit();
+    if (detourResult != NO_ERROR)
+    {
+        LOG_ERROR("Failed to install FSR2 hooks: {:X}", detourResult);
+        o_ffxFsr2ContextCreate_Dx12 = nullptr;
+        o_ffxFsr2ContextDispatch_Dx12 = nullptr;
+        o_ffxFsr2ContextDestroy_Dx12 = nullptr;
+        o_ffxFsr2GetUpscaleRatioFromQualityMode_Dx12 = nullptr;
+        o_ffxFsr2GetRenderResolutionFromQualityMode_Dx12 = nullptr;
+        o_ffxFsr2ContextCreate_Pattern_Dx12 = nullptr;
+        o_ffxFsr2ContextDispatch_Pattern_Dx12 = nullptr;
+        o_ffxFsr2ContextDestroy_Pattern_Dx12 = nullptr;
+    }
+    else
+    {
+        State::Instance().fsrHooks =
+            o_ffxFsr2ContextCreate_Dx12 != nullptr || o_ffxFsr2ContextCreate_Pattern_Dx12 != nullptr;
+    }
 }
 
 void HookFSR2Inputs(HMODULE module)
@@ -1317,9 +1332,20 @@ void HookFSR2Inputs(HMODULE module)
                       (size_t) o_ffxFsr2GetRenderResolutionFromQualityMode_Dx12);
         }
 
-        State::Instance().fsrHooks = o_ffxFsr2ContextCreate_Dx12 != nullptr;
-
-        DetourTransactionCommit();
+        auto detourResult = DetourTransactionCommit();
+        if (detourResult != NO_ERROR)
+        {
+            LOG_ERROR("Failed to install FSR2 hooks: {:X}", detourResult);
+            o_ffxFsr2ContextCreate_Dx12 = nullptr;
+            o_ffxFsr2ContextDispatch_Dx12 = nullptr;
+            o_ffxFsr2ContextDestroy_Dx12 = nullptr;
+            o_ffxFsr2GetUpscaleRatioFromQualityMode_Dx12 = nullptr;
+            o_ffxFsr2GetRenderResolutionFromQualityMode_Dx12 = nullptr;
+        }
+        else
+        {
+            State::Instance().fsrHooks = o_ffxFsr2ContextCreate_Dx12 != nullptr;
+        }
     }
 }
 
@@ -1337,6 +1363,12 @@ void HookFSR2Dx12Inputs(HMODULE module)
         if (o_ffxFsr2GetInterfaceDX12 == nullptr)
             o_ffxFsr2GetInterfaceDX12 =
                 (PFN_ffxFsr2GetInterfaceDX12) KernelBaseProxy::GetProcAddress_()(module, "ffxFsr2GetInterfaceDX12");
+
+        LOG_DEBUG("ffxFsr2GetInterfaceDX12: {:X}", (size_t) o_ffxFsr2GetInterfaceDX12);
+    }
+    else
+    {
+        return;
     }
 
     if (o_ffxFsr2GetInterfaceDX12 != nullptr)
@@ -1349,8 +1381,11 @@ void HookFSR2Dx12Inputs(HMODULE module)
         if (o_ffxFsr2GetInterfaceDX12 != nullptr)
             DetourAttach(&(PVOID&) o_ffxFsr2GetInterfaceDX12, hk_ffxFsr2GetInterfaceDX12);
 
-        DetourTransactionCommit();
+        auto detourResult = DetourTransactionCommit();
+        if (detourResult != NO_ERROR)
+        {
+            LOG_ERROR("Failed to install FSR2 hooks: {:X}", detourResult);
+            o_ffxFsr2GetInterfaceDX12 = nullptr;
+        }
     }
-
-    LOG_DEBUG("ffxFsr2GetInterfaceDX12: {:X}", (size_t) o_ffxFsr2GetInterfaceDX12);
 }

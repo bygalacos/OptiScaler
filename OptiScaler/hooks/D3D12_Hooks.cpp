@@ -765,8 +765,6 @@ static void UnhookAll()
         DetourDetach(&(PVOID&) s_SetGraphicsRootSignature.o_earlyHook, hkSetGraphicsRootSignature);
         s_SetGraphicsRootSignature.o_earlyHook = nullptr;
     }
-
-    DetourTransactionCommit();
 }
 
 VALIDATE_HOOK(hkD3D12CreateDevice, D3d12Proxy::PFN_D3D12CreateDevice)
@@ -1524,7 +1522,12 @@ static HRESULT hkD3D12GetInterface(REFCLSID rclsid, REFIID riid, void** ppvDebug
             DetourTransactionBegin();
             DetourUpdateThread(GetCurrentThread());
             DetourAttach(&(PVOID&) o_CreateDevice, hkCreateDevice);
-            DetourTransactionCommit();
+            auto detourResult = DetourTransactionCommit();
+            if (detourResult != NO_ERROR)
+            {
+                LOG_ERROR("Failed to detour ID3D12DeviceFactory::CreateDevice, error: {:X}", detourResult);
+                o_CreateDevice = nullptr;
+            }
         }
     }
 
@@ -1604,7 +1607,18 @@ static void HookToDevice(ID3D12Device* InDevice)
                 DetourAttach(&(PVOID&) o_GetResourceAllocationInfo, hkGetResourceAllocationInfo);
         }
 
-        DetourTransactionCommit();
+        auto detourResult = DetourTransactionCommit();
+        if (detourResult != NO_ERROR)
+        {
+            LOG_ERROR("Failed to detour ID3D12Device methods, error: {:X}", detourResult);
+            o_CreateSampler = nullptr;
+            o_CheckFeatureSupport = nullptr;
+            o_CreateRootSignature = nullptr;
+            o_CreateCommittedResource = nullptr;
+            o_CreatePlacedResource = nullptr;
+            o_D3D12DeviceRelease = nullptr;
+            o_GetResourceAllocationInfo = nullptr;
+        }
     }
 
     HookToCommandList(InDevice);
@@ -1641,14 +1655,20 @@ static void UnhookDevice()
     if (o_GetResourceAllocationInfo != nullptr)
         DetourDetach(&(PVOID&) o_GetResourceAllocationInfo, hkGetResourceAllocationInfo);
 
-    DetourTransactionCommit();
-
-    o_CreateSampler = nullptr;
-    o_CheckFeatureSupport = nullptr;
-    o_CreateCommittedResource = nullptr;
-    o_CreatePlacedResource = nullptr;
-    o_D3D12DeviceRelease = nullptr;
-    o_GetResourceAllocationInfo = nullptr;
+    auto detourResult = DetourTransactionCommit();
+    if (detourResult != NO_ERROR)
+    {
+        LOG_ERROR("Failed to unhook ID3D12Device methods, error: {:X}", detourResult);
+    }
+    else
+    {
+        o_CreateSampler = nullptr;
+        o_CheckFeatureSupport = nullptr;
+        o_CreateCommittedResource = nullptr;
+        o_CreatePlacedResource = nullptr;
+        o_D3D12DeviceRelease = nullptr;
+        o_GetResourceAllocationInfo = nullptr;
+    }
 
     ResTrack_Dx12::ReleaseDeviceHooks();
 }
@@ -1657,15 +1677,17 @@ void D3D12Hooks::Hook()
 {
     std::lock_guard<std::mutex> lock(hookMutex);
 
-    if (o_D3D12CreateDevice != nullptr)
-        return;
-
     LOG_DEBUG("");
 
-    o_D3D12CreateDevice = D3d12Proxy::Hook_D3D12CreateDevice(hkD3D12CreateDevice);
-    o_D3D12SerializeRootSignature = D3d12Proxy::Hook_D3D12SerializeRootSignature(hkD3D12SerializeRootSignature);
-    o_D3D12SerializeVersionedRootSignature =
-        D3d12Proxy::Hook_D3D12SerializeVersionedRootSignature(hkD3D12SerializeVersionedRootSignature);
+    if (o_D3D12CreateDevice == nullptr)
+        o_D3D12CreateDevice = D3d12Proxy::Hook_D3D12CreateDevice(hkD3D12CreateDevice);
+
+    if (o_D3D12SerializeRootSignature == nullptr)
+        o_D3D12SerializeRootSignature = D3d12Proxy::Hook_D3D12SerializeRootSignature(hkD3D12SerializeRootSignature);
+
+    if (o_D3D12SerializeVersionedRootSignature == nullptr)
+        o_D3D12SerializeVersionedRootSignature =
+            D3d12Proxy::Hook_D3D12SerializeVersionedRootSignature(hkD3D12SerializeVersionedRootSignature);
 }
 
 void D3D12Hooks::HookAgility(HMODULE module)
@@ -1684,7 +1706,12 @@ void D3D12Hooks::HookAgility(HMODULE module)
         DetourTransactionBegin();
         DetourUpdateThread(GetCurrentThread());
         DetourAttach(&(PVOID&) o_D3D12GetInterface, hkD3D12GetInterface);
-        DetourTransactionCommit();
+        auto detourResult = DetourTransactionCommit();
+        if (detourResult != NO_ERROR)
+        {
+            LOG_ERROR("Failed to detour D3D12GetInterface, error: {:X}", detourResult);
+            o_D3D12GetInterface = nullptr;
+        }
     }
 }
 
@@ -1697,42 +1724,37 @@ void D3D12Hooks::Unhook()
     DetourUpdateThread(GetCurrentThread());
 
     if (o_CreateSampler != nullptr)
-    {
         DetourDetach(&(PVOID&) o_CreateSampler, hkCreateSampler);
-        o_CreateSampler = nullptr;
-    }
 
     if (o_CheckFeatureSupport != nullptr)
-    {
         DetourDetach(&(PVOID&) o_CheckFeatureSupport, hkCheckFeatureSupport);
-        o_CheckFeatureSupport = nullptr;
-    }
 
     if (o_CreateCommittedResource != nullptr)
-    {
         DetourDetach(&(PVOID&) o_CreateCommittedResource, hkCreateCommittedResource);
-        o_CreateCommittedResource = nullptr;
-    }
 
     if (o_CreatePlacedResource != nullptr)
-    {
         DetourDetach(&(PVOID&) o_CreatePlacedResource, hkCreatePlacedResource);
-        o_CreatePlacedResource = nullptr;
-    }
 
     if (o_GetResourceAllocationInfo != nullptr)
-    {
         DetourDetach(&(PVOID&) o_GetResourceAllocationInfo, hkGetResourceAllocationInfo);
-        o_GetResourceAllocationInfo = nullptr;
-    }
 
     if (o_D3D12DeviceRelease != nullptr)
-    {
         DetourDetach(&(PVOID&) o_D3D12DeviceRelease, hkD3D12DeviceRelease);
-        o_D3D12DeviceRelease = nullptr;
-    }
 
-    DetourTransactionCommit();
+    auto detourResult = DetourTransactionCommit();
+    if (detourResult != NO_ERROR)
+    {
+        LOG_ERROR("Failed to unhook ID3D12Device methods, error: {:X}", detourResult);
+    }
+    else
+    {
+        o_CreateSampler = nullptr;
+        o_CheckFeatureSupport = nullptr;
+        o_CreateCommittedResource = nullptr;
+        o_CreatePlacedResource = nullptr;
+        o_D3D12DeviceRelease = nullptr;
+        o_GetResourceAllocationInfo = nullptr;
+    }
 }
 
 void D3D12Hooks::SetRootSignatureTracking(bool enable) { isUpscalerActive = !enable; }

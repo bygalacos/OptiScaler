@@ -941,7 +941,27 @@ void FSR3FG::HookFSR3FGExeInputs()
         DetourAttach(&(PVOID&) o_ffxSetFrameGenerationConfigToSwapchainDX12,
                      hkffxSetFrameGenerationConfigToSwapchainDX12);
 
-    DetourTransactionCommit();
+    auto detourResult = DetourTransactionCommit();
+    if (detourResult != NO_ERROR)
+    {
+        LOG_ERROR("Failed to hook FSR3-FG exe methods, DetourTransactionCommit result: {:X}", detourResult);
+        o_ffxReplaceSwapchainForFrameinterpolationDX12 = nullptr;
+        o_ffxCreateFrameinterpolationSwapchainDX12 = nullptr;
+        o_ffxCreateFrameinterpolationSwapchainForHwndDX12 = nullptr;
+        o_ffxWaitForPresents = nullptr;
+        o_ffxRegisterFrameinterpolationUiResourceDX12 = nullptr;
+        o_ffxGetFrameinterpolationCommandlistDX12 = nullptr;
+        o_ffxGetFrameinterpolationTextureDX12 = nullptr;
+        o_ffxFrameInterpolationContextCreate = nullptr;
+        o_ffxFrameInterpolationDispatch = nullptr;
+        o_ffxFrameInterpolationContextDestroy = nullptr;
+        o_ffxFsr3ConfigureFrameGeneration = nullptr;
+        o_ffxSetFrameGenerationConfigToSwapchainDX12 = nullptr;
+    }
+    else
+    {
+        State::Instance().fsrHooks = o_ffxReplaceSwapchainForFrameinterpolationDX12 != nullptr;
+    }
 }
 
 void FSR3FG::HookFSR3FGInputs()
@@ -1047,7 +1067,27 @@ void FSR3FG::HookFSR3FGInputs()
         DetourAttach(&(PVOID&) o_ffxSetFrameGenerationConfigToSwapchainDX12,
                      hkffxSetFrameGenerationConfigToSwapchainDX12);
 
-    DetourTransactionCommit();
+    auto detourResult = DetourTransactionCommit();
+    if (detourResult != NO_ERROR)
+    {
+        LOG_ERROR("Failed to hook FSR3-FG dll methods, DetourTransactionCommit result: {:X}", detourResult);
+        o_ffxReplaceSwapchainForFrameinterpolationDX12 = nullptr;
+        o_ffxCreateFrameinterpolationSwapchainDX12 = nullptr;
+        o_ffxCreateFrameinterpolationSwapchainForHwndDX12 = nullptr;
+        o_ffxWaitForPresents = nullptr;
+        o_ffxRegisterFrameinterpolationUiResourceDX12 = nullptr;
+        o_ffxGetFrameinterpolationCommandlistDX12 = nullptr;
+        o_ffxGetFrameinterpolationTextureDX12 = nullptr;
+        o_ffxFrameInterpolationContextCreate = nullptr;
+        o_ffxFrameInterpolationDispatch = nullptr;
+        o_ffxFrameInterpolationContextDestroy = nullptr;
+        o_ffxFsr3ConfigureFrameGeneration = nullptr;
+        o_ffxSetFrameGenerationConfigToSwapchainDX12 = nullptr;
+    }
+    else
+    {
+        State::Instance().fsrHooks = o_ffxReplaceSwapchainForFrameinterpolationDX12 != nullptr;
+    }
 }
 
 void FSR3FG::ffxPresentCallback()

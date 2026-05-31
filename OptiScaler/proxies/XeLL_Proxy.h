@@ -59,7 +59,9 @@ static void RedirectAllExports(HMODULE hOld, HMODULE hNew)
 
     DetourEnumerateExports(hOld, hNew, ExportCallback);
 
-    DetourTransactionCommit();
+    auto detourResult = DetourTransactionCommit();
+    if (detourResult != NO_ERROR)
+        LOG_ERROR("Failed to commit detours: {:X}", detourResult);
 }
 
 class XeLLProxy

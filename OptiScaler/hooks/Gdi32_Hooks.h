@@ -69,7 +69,12 @@ static void hookGdi32()
 
             DetourAttach(&(PVOID&) o_D3DKMTQueryAdapterInfo, hkD3DKMTQueryAdapterInfo);
 
-            DetourTransactionCommit();
+            auto detourResult = DetourTransactionCommit();
+            if (detourResult != NO_ERROR)
+            {
+                LOG_ERROR("DetourTransactionCommit error: {:X}", detourResult);
+                o_D3DKMTQueryAdapterInfo = nullptr;
+            }
         }
     }
 }
@@ -82,8 +87,15 @@ static void unhookGdi32()
         DetourUpdateThread(GetCurrentThread());
 
         DetourDetach(&(PVOID&) o_D3DKMTQueryAdapterInfo, hkD3DKMTQueryAdapterInfo);
-        o_D3DKMTQueryAdapterInfo = nullptr;
 
-        DetourTransactionCommit();
+        auto detourResult = DetourTransactionCommit();
+        if (detourResult != NO_ERROR)
+        {
+            LOG_ERROR("DetourTransactionCommit error: {:X}", detourResult);
+        }
+        else
+        {
+            o_D3DKMTQueryAdapterInfo = nullptr;
+        }
     }
 }

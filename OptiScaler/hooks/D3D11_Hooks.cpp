@@ -111,7 +111,13 @@ static void HookToDeviceLocal(ID3D11Device* InDevice)
         if (o_CreateSamplerState != nullptr)
             DetourAttach(&(PVOID&) o_CreateSamplerState, hkCreateSamplerState);
 
-        DetourTransactionCommit();
+        auto detourResult = DetourTransactionCommit();
+        if (detourResult != NO_ERROR)
+        {
+            LOG_ERROR("Failed to hook ID3D11Device: {:X}", detourResult);
+            o_CreateSamplerState = nullptr;
+            o_D3D11DeviceRelease = nullptr;
+        }
     }
 }
 
@@ -546,7 +552,14 @@ void D3D11Hooks::Hook(HMODULE dx11Module)
         if (o_D3D11CreateDeviceAndSwapChain != nullptr)
             DetourAttach(&(PVOID&) o_D3D11CreateDeviceAndSwapChain, hkD3D11CreateDeviceAndSwapChain);
 
-        DetourTransactionCommit();
+        auto detourResult = DetourTransactionCommit();
+        if (detourResult != NO_ERROR)
+        {
+            LOG_ERROR("Failed to hook ID3D11Device: {:X}", detourResult);
+            o_D3D11CreateDevice = nullptr;
+            o_D3D11On12CreateDevice = nullptr;
+            o_D3D11CreateDeviceAndSwapChain = nullptr;
+        }
     }
 }
 
@@ -556,30 +569,33 @@ void D3D11Hooks::Unhook()
     DetourUpdateThread(GetCurrentThread());
 
     if (o_D3D11CreateDevice != nullptr)
-    {
         DetourDetach(&(PVOID&) o_D3D11CreateDevice, hkD3D11CreateDevice);
-        o_D3D11CreateDevice = nullptr;
-    }
+
+    if (o_D3D11DeviceRelease != nullptr)
+        DetourDetach(&(PVOID&) o_D3D11DeviceRelease, hkD3D11DeviceRelease);
 
     if (o_D3D11On12CreateDevice != nullptr)
-    {
         DetourDetach(&(PVOID&) o_D3D11On12CreateDevice, hkD3D11On12CreateDevice);
-        o_D3D11On12CreateDevice = nullptr;
-    }
 
     if (o_D3D11CreateDeviceAndSwapChain != nullptr)
-    {
         DetourDetach(&(PVOID&) o_D3D11CreateDeviceAndSwapChain, hkD3D11CreateDeviceAndSwapChain);
-        o_D3D11CreateDeviceAndSwapChain = nullptr;
-    }
 
     if (o_CreateSamplerState != nullptr)
-    {
         DetourDetach(&(PVOID&) o_CreateSamplerState, hkCreateSamplerState);
-        o_CreateSamplerState = nullptr;
-    }
 
-    DetourTransactionCommit();
+    auto detourResult = DetourTransactionCommit();
+    if (detourResult != NO_ERROR)
+    {
+        LOG_ERROR("Failed to unhook ID3D11Device: {:X}", detourResult);
+    }
+    else
+    {
+        o_D3D11CreateDevice = nullptr;
+        o_CreateSamplerState = nullptr;
+        o_D3D11DeviceRelease = nullptr;
+        o_D3D11On12CreateDevice = nullptr;
+        o_D3D11CreateDeviceAndSwapChain = nullptr;
+    }
 }
 
 #pragma endregion

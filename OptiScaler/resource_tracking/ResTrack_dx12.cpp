@@ -894,7 +894,12 @@ HRESULT ResTrack_Dx12::hkCreateDescriptorHeap(ID3D12Device* This, D3D12_DESCRIPT
             DetourTransactionBegin();
             DetourUpdateThread(GetCurrentThread());
             DetourAttach(&(PVOID&) o_HeapRelease, hkHeapRelease);
-            DetourTransactionCommit();
+            auto detourResult = DetourTransactionCommit();
+            if (detourResult != NO_ERROR)
+            {
+                LOG_ERROR("Failed to hook Heap Release: {:X}", detourResult);
+                o_HeapRelease = nullptr;
+            }
         }
 
         auto increment = This->GetDescriptorHandleIncrementSize(pDescriptorHeapDesc->Type);
@@ -1924,9 +1929,18 @@ void ResTrack_Dx12::HookResource(ID3D12Device* InDevice)
             DetourTransactionBegin();
             DetourUpdateThread(GetCurrentThread());
             DetourAttach(&(PVOID&) o_Release, hkRelease);
-            DetourTransactionCommit();
+            auto detourResult = DetourTransactionCommit();
 
-            o_Release(tmp); // drop temp
+            if (detourResult != NO_ERROR)
+            {
+                LOG_ERROR("Failed to hook Heap Release: {:X}", detourResult);
+                o_Release = nullptr;
+                tmp->Release();
+            }
+            else
+            {
+                o_Release(tmp); // drop temp
+            }
         }
         else
         {
@@ -2003,7 +2017,19 @@ void ResTrack_Dx12::HookCommandList(ID3D12Device* InDevice)
                 if (o_ExecuteBundle != nullptr)
                     DetourAttach(&(PVOID&) o_ExecuteBundle, hkExecuteBundle);
 
-                DetourTransactionCommit();
+                auto detourResult = DetourTransactionCommit();
+                if (detourResult != NO_ERROR)
+                {
+                    LOG_ERROR("Failed to hook CommandList methods: {:X}", detourResult);
+                    o_OMSetRenderTargets = nullptr;
+                    o_SetGraphicsRootDescriptorTable = nullptr;
+                    o_DrawInstanced = nullptr;
+                    o_DrawIndexedInstanced = nullptr;
+                    o_Dispatch = nullptr;
+                    o_Close = nullptr;
+                    o_SetComputeRootDescriptorTable = nullptr;
+                    o_ExecuteBundle = nullptr;
+                }
             }
 
             commandList->Close();
@@ -2046,7 +2072,12 @@ void ResTrack_Dx12::HookToQueue(ID3D12Device* InDevice)
         if (o_ExecuteCommandLists != nullptr)
             DetourAttach(&(PVOID&) o_ExecuteCommandLists, hkExecuteCommandLists);
 
-        DetourTransactionCommit();
+        auto detourResult = DetourTransactionCommit();
+        if (detourResult != NO_ERROR)
+        {
+            LOG_ERROR("Failed to hook CommandList methods: {:X}", detourResult);
+            o_ExecuteCommandLists = nullptr;
+        }
 
         queue->Release();
     }
@@ -2113,7 +2144,17 @@ void ResTrack_Dx12::HookDevice(ID3D12Device* device)
         if (o_CopyDescriptorsSimple != nullptr)
             DetourAttach(&(PVOID&) o_CopyDescriptorsSimple, hkCopyDescriptorsSimple);
 
-        DetourTransactionCommit();
+        auto detourResult = DetourTransactionCommit();
+        if (detourResult != NO_ERROR)
+        {
+            LOG_ERROR("Failed to hook Descriptor methods: {:X}", detourResult);
+            o_CreateDescriptorHeap = nullptr;
+            o_CreateRenderTargetView = nullptr;
+            o_CreateShaderResourceView = nullptr;
+            o_CreateUnorderedAccessView = nullptr;
+            o_CopyDescriptors = nullptr;
+            o_CopyDescriptorsSimple = nullptr;
+        }
     }
 
     HookToQueue(device);
@@ -2179,31 +2220,37 @@ void ResTrack_Dx12::ReleaseDeviceHooks()
     if (o_Release != nullptr)
         DetourDetach(&(PVOID&) o_Release, hkRelease);
 
-    DetourTransactionCommit();
+    auto detourResult = DetourTransactionCommit();
+    if (detourResult != NO_ERROR)
+    {
+        LOG_ERROR("Failed to unhook Resource methods: {:X}", detourResult);
+    }
+    else
+    {
+        // Device
+        o_CreateDescriptorHeap = nullptr;
+        o_CreateRenderTargetView = nullptr;
+        o_CreateShaderResourceView = nullptr;
+        o_CreateUnorderedAccessView = nullptr;
+        o_CopyDescriptors = nullptr;
+        o_CopyDescriptorsSimple = nullptr;
 
-    // Device
-    o_CreateDescriptorHeap = nullptr;
-    o_CreateRenderTargetView = nullptr;
-    o_CreateShaderResourceView = nullptr;
-    o_CreateUnorderedAccessView = nullptr;
-    o_CopyDescriptors = nullptr;
-    o_CopyDescriptorsSimple = nullptr;
+        // Queue
+        o_ExecuteCommandLists = nullptr;
 
-    // Queue
-    o_ExecuteCommandLists = nullptr;
+        // CommandList
+        o_OMSetRenderTargets = nullptr;
+        o_SetGraphicsRootDescriptorTable = nullptr;
+        o_SetComputeRootDescriptorTable = nullptr;
+        o_DrawIndexedInstanced = nullptr;
+        o_DrawInstanced = nullptr;
+        o_Dispatch = nullptr;
+        o_Close = nullptr;
+        o_ExecuteBundle = nullptr;
 
-    // CommandList
-    o_OMSetRenderTargets = nullptr;
-    o_SetGraphicsRootDescriptorTable = nullptr;
-    o_SetComputeRootDescriptorTable = nullptr;
-    o_DrawIndexedInstanced = nullptr;
-    o_DrawInstanced = nullptr;
-    o_Dispatch = nullptr;
-    o_Close = nullptr;
-    o_ExecuteBundle = nullptr;
-
-    // Resource
-    o_Release = nullptr;
+        // Resource
+        o_Release = nullptr;
+    }
 }
 
 void ResTrack_Dx12::ReleaseHooks()
@@ -2272,16 +2319,22 @@ void ResTrack_Dx12::ReleaseHooks()
     if (o_ExecuteBundle != nullptr)
         DetourDetach(&(PVOID&) o_ExecuteBundle, hkExecuteBundle);
 
-    o_OMSetRenderTargets = nullptr;
-    o_SetGraphicsRootDescriptorTable = nullptr;
-    o_SetComputeRootDescriptorTable = nullptr;
-    o_DrawIndexedInstanced = nullptr;
-    o_DrawInstanced = nullptr;
-    o_Dispatch = nullptr;
-    o_Close = nullptr;
-    o_ExecuteBundle = nullptr;
-
-    DetourTransactionCommit();
+    auto detourResult = DetourTransactionCommit();
+    if (detourResult != NO_ERROR)
+    {
+        LOG_ERROR("Failed to unhook CommandList methods: {:X}", detourResult);
+    }
+    else
+    {
+        o_OMSetRenderTargets = nullptr;
+        o_SetGraphicsRootDescriptorTable = nullptr;
+        o_SetComputeRootDescriptorTable = nullptr;
+        o_DrawIndexedInstanced = nullptr;
+        o_DrawInstanced = nullptr;
+        o_Dispatch = nullptr;
+        o_Close = nullptr;
+        o_ExecuteBundle = nullptr;
+    }
 }
 
 void ResTrack_Dx12::ClearPossibleHudless()

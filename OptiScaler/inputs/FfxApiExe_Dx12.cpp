@@ -447,8 +447,19 @@ void HookFfxExeInputs()
             DetourAttach(&(PVOID&) _D3D12_Query, ffxQuery_Dx12);
         }
 
-        State::Instance().fsrHooks = true;
-
-        DetourTransactionCommit();
+        auto detourResult = DetourTransactionCommit();
+        if (detourResult != NO_ERROR)
+        {
+            LOG_ERROR("Failed to hook Ffx Exe methods: {:X}", (UINT) detourResult);
+            _D3D12_Configure = nullptr;
+            _D3D12_CreateContext = nullptr;
+            _D3D12_DestroyContext = nullptr;
+            _D3D12_Dispatch = nullptr;
+            _D3D12_Query = nullptr;
+        }
+        else
+        {
+            State::Instance().fsrHooks = true;
+        }
     }
 }

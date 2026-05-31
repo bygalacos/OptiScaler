@@ -725,5 +725,17 @@ void HookFSR2VkExeInputs()
 
     State::Instance().fsrHooks = o_ffxFsr2ContextCreate_Vk != nullptr;
 
-    DetourTransactionCommit();
+    auto detourResult = DetourTransactionCommit();
+    if (detourResult != NO_ERROR)
+    {
+        LOG_ERROR("Failed to attach FSR2 Vk hooks: {:X}", detourResult);
+        o_ffxFsr2ContextCreate_Vk = nullptr;
+        o_ffxFsr2ContextDispatch_Vk = nullptr;
+        o_ffxFsr2ContextDestroy_Vk = nullptr;
+        o_ffxFsr2GetUpscaleRatioFromQualityMode_Vk = nullptr;
+        o_ffxFsr2GetRenderResolutionFromQualityMode_Vk = nullptr;
+        o_ffxFsr2GetJitterPhaseCount_Vk = nullptr;
+        o_ffxFsr2GetScratchMemorySize_Vk = nullptr;
+        o_ffxGetDevice_Vk = nullptr;
+    }
 }

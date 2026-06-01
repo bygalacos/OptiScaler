@@ -344,8 +344,6 @@ UINT GetRootParameterCount(ID3D12RootSignature* pRootSignature)
 VALIDATE_HOOK(hkSetComputeRootSignature, PFN_SetComputeRootSignature)
 static void hkSetComputeRootSignature(ID3D12GraphicsCommandList* commandList, ID3D12RootSignature* pRootSignature)
 {
-    bool tracking = false;
-
     if (!lateInProgressSetComputeRootSignature && Config::Instance()->RestoreComputeSignature.value_or_default() &&
         !isUpscalerActive && commandList != nullptr && pRootSignature != nullptr)
     {
@@ -357,8 +355,6 @@ static void hkSetComputeRootSignature(ID3D12GraphicsCommandList* commandList, ID
 
         std::unique_lock<std::shared_mutex> lock(s_SetComputeRootSignature.mutex);
         computeSignatures.insert_or_assign(commandList, pRootSignature);
-
-        tracking = true;
     }
 
     s_SetComputeRootSignature.o_earlyHook(commandList, pRootSignature);

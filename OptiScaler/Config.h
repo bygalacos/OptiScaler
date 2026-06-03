@@ -462,6 +462,7 @@ class Config
     CustomOptional<bool> LoadSpecialK { false };
     CustomOptional<bool> LoadReShade { false };
     CustomOptional<bool> LoadAsiPlugins { false };
+    CustomOptional<int> LateAsiPluginsDelay { 30 };
 
     // Frame Generation
     CustomOptional<FGInput> FGInput { FGInput::NoFG };

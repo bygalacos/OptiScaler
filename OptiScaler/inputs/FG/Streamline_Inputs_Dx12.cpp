@@ -129,7 +129,7 @@ bool Sl_Inputs_Dx12::setConstants(const sl::Constants& values, uint32_t frameId)
 
         if (!config->FGEnabled.value_or_default())
         {
-            LOG_TRACE("FG not active or paused");
+            LOG_TRACE("FG not enabled");
             return true;
         }
         else
@@ -140,13 +140,12 @@ bool Sl_Inputs_Dx12::setConstants(const sl::Constants& values, uint32_t frameId)
             }
             else if (!fgOutput->IsActive() || fgOutput->IsPaused())
             {
-                LOG_TRACE("FG not active or paused");
+                LOG_TRACE("FG not active or paused (A:{}, P:{})", fgOutput->IsActive(), fgOutput->IsPaused());
                 return true;
             }
         }
 
         // Frame data part
-
         // Nukem's function, licensed under GPLv3
         auto loadCameraMatrix = [&]()
         {

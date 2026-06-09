@@ -4946,7 +4946,7 @@ bool MenuCommon::RenderMenu()
                     if (!ReflexHooks::isReflexHooked())
                     {
                         ImGui::TextColored(toneMapColor(ImVec4(1.f, 0.f, 0.f, 1.f)), "Reflex not hooked");
-                        ImGui::Text("If you are using an AMD/Intel GPU then make sure you have fakenvapi");
+                        ImGui::Text("If you are using an AMD/Intel GPU, then make sure you have fakenvapi");
                     }
                     else if (fgOutput != nullptr)
                     {

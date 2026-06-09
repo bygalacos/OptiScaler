@@ -128,6 +128,10 @@ static const QuirkEntry quirkTable[] = {
     // Kernel hooks required to unlock DLSS inputs
     QUIRK_ENTRY("htgame.exe", GameQuirk::DisableFSR2Inputs, GameQuirk::DisableFSR3Inputs, GameQuirk::DontUseNtDllHooks),
 
+    // Wuthering Waves
+    // Kernel hooks required to unlock DLSS inputs, Not preserving FG Swapchain for fixing XeFG
+    QUIRK_ENTRY_UE(client, GameQuirk::DontUseNtDllHooks, GameQuirk::DoNotPreserveFGSwapChain),
+
     // Trails in the Sky 1st Chapter
     QUIRK_ENTRY("sora_1st.exe", GameQuirk::UseFsr2Dx11Inputs, GameQuirk::DisableDxgiSpoofing),
 

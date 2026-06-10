@@ -2056,13 +2056,6 @@ BOOL APIENTRY DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserv
             FSR3FG::HookFSR3FGExeInputs();
         }
 
-        if (State::Instance().activeFgInput == FGInput::Upscaler &&
-            State::Instance().GameEngine == GameEngineType::Unity && !Config::Instance()->FGResourceFlip.has_value())
-        {
-            LOG_WARN("Unity detected with Upscaler input, but FGResourceFlip is not set. Enabling it");
-            Config::Instance()->FGResourceFlip.set_volatile_value(true);
-        }
-
         for (size_t i = 0; i < 300; i++)
         {
             State::Instance().frameTimes.push_back(0.0f);

@@ -1187,11 +1187,17 @@ std::string MenuCommon::GetBackendName(std::string* code)
     if (*code == "dlss")
         return "DLSS";
 
+    if (*code == "dlssd")
+        return "DLSSD";
+
     return "????";
 }
 
 std::string MenuCommon::GetBackendCode(const API api)
 {
+    if (State::Instance().currentFeature != nullptr && State::Instance().currentFeature->Name() == "DLSSD")
+        return "dlssd";
+
     std::string code;
 
     if (api == DX11)
